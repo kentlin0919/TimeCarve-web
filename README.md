@@ -78,20 +78,20 @@ pnpm start
 
 ```
 app/
-├── public/                 # 公開頁面 (首頁, 課程, 登入, 法律條款)
-│   ├── courses/            # 課程列表與詳細頁
-│   ├── auth/               # 登入/註冊流程
-│   └── teachers/           # 教師介紹
-├── student/                # 學生專區 (需登入)
+├── (public)/               # Route Group: 公開頁面 (對應根路徑)
+│   ├── page.tsx            # 首頁 (/)
+│   ├── courses/            # 課程列表 (/courses)
+│   ├── auth/               # 登入/註冊 (/auth/...)
+│   └── teachers/           # 教師介紹 (/teachers/...)
+├── student/                # 學生專區 (/student/...)
 │   ├── dashboard/          # 學生儀表板
 │   ├── booking/            # 預約流程
 │   └── courses/            # 已購課程
-├── teacher/                # 教師後台 (需權限)
+├── teacher/                # 教師後台 (/teacher/...)
 │   ├── dashboard/          # 後台總覽
 │   ├── courses/            # 課程管理
 │   ├── students/           # 學生管理
 │   └── reports/            # 營收報表
-├── api/                    # API Route Handlers
 ├── layout.tsx              # 全域佈局
 └── globals.css             # 全域樣式 (Tailwind)
 ```

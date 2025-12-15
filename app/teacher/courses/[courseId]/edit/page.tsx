@@ -1,3 +1,7 @@
+export async function generateStaticParams() {
+  return []; // No dynamic segments are pre-rendered statically for now
+}
+
 export default async function EditCoursePage({
   params,
 }: {

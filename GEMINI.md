@@ -55,43 +55,43 @@ pnpm lint
   ├─ error.tsx                      # 全站錯誤 fallback
   ├─ middleware.ts                  # 權限 / role guard（可選）
 
-  ├─ public/                        # 未登入可存取
+  ├─ (public)/                      # Route Group: 未登入可存取，對應根路徑
   │  ├─ layout.tsx                  # 公開頁面 layout（navbar / footer）
-  │  ├─ page.tsx                    # 首頁＋作品集（screen: 首頁與作品集）
+  │  ├─ page.tsx                    # 首頁＋作品集（URL: /）
   │  │
   │  ├─ courses/
-  │  │  ├─ page.tsx                 # 課程方案列表
+  │  │  ├─ page.tsx                 # 課程方案列表（URL: /courses）
   │  │  └─ [courseId]/
-  │  │     └─ page.tsx              # 課程方案公開詳細頁（補缺）
+  │     │     └─ page.tsx           # 課程方案公開詳細頁
   │  │
   │  ├─ teachers/
   │  │  └─ [teacherId]/
-  │  │     └─ page.tsx              # 教師公開介紹頁（品牌 / 招生）
+  │     │     └─ page.tsx           # 教師公開介紹頁
   │  │
-  │  ├─ auth/
+  │  ├─ auth/                       # URL: /auth/...
   │  │  ├─ layout.tsx
   │  │  ├─ login/
-  │  │  │  └─ page.tsx              # 登入頁
+  │  │  │  └─ page.tsx
   │  │  ├─ register/
-  │  │  │  └─ page.tsx              # 獨立註冊頁
+  │  │  │  └─ page.tsx
   │  │  ├─ forgot-password/
-  │  │  │  └─ page.tsx              # 忘記密碼（補缺）
+  │  │  │  └─ page.tsx
   │  │  ├─ reset-password/
-  │  │  │  └─ page.tsx              # 重設密碼（補缺）
+  │  │  │  └─ page.tsx
   │  │  └─ verify/
-  │  │     └─ page.tsx              # Email 驗證狀態頁
+  │  │     └─ page.tsx
   │  │
-  │  └─ legal/
+  │  └─ legal/                      # URL: /legal/...
   │     ├─ terms/
-  │     │  └─ page.tsx              # 使用者條款
+  │     │  └─ page.tsx
   │     └─ privacy/
-  │        └─ page.tsx              # 隱私政策
+  │        └─ page.tsx
   │
-  ├─ student/                       # 學生登入後
-  │  ├─ layout.tsx                  # Student layout（role guard）
+  ├─ student/                       # URL Prefix: /student/...
+  │  ├─ layout.tsx                  # Student layout
   │  │
   │  ├─ dashboard/
-  │  │  └─ page.tsx                 # 學生儀表板
+  │  │  └─ page.tsx                 # URL: /student/dashboard
   │  │
   │  ├─ booking/
   │  │  ├─ page.tsx                 # 預約課程介面
