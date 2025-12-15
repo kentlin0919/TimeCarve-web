@@ -1,9 +1,9 @@
 export async function generateStaticParams() {
-  return []; // No dynamic segments are pre-rendered statically for now
+  return [{ workId: 'demo' }];
 }
 
-export default function EditPortfolioWorkPage({ params }: { params: { workId: string } }) {
-  const { workId } = params;
+export default async function EditPortfolioWorkPage({ params }: { params: Promise<{ workId: string }> }) {
+  const { workId } = await params;
   return (
     <div>
       <h1 className="text-3xl font-bold">編輯作品: {workId}</h1>

@@ -1,13 +1,13 @@
 export async function generateStaticParams() {
-  return []; // No dynamic segments are pre-rendered statically for now
+  return [{ bookingId: 'demo' }];
 }
 
-export default function ReschedulePage({
+export default async function ReschedulePage({
   params,
 }: {
-  params: { bookingId: string };
+  params: Promise<{ bookingId: string }>;
 }) {
-  const { bookingId } = params;
+  const { bookingId } = await params;
   return (
     <div>
       <h1 className="text-3xl font-bold">改期預約: {bookingId}</h1>
