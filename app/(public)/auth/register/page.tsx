@@ -51,43 +51,41 @@ export default function RegisterPage() {
             </div>
 
             <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-              {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="name">姓名</label>
+                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="name">姓名 <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <input className="form-input block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 px-4 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out" id="name" name="name" placeholder="請輸入您的全名" type="text" />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none opacity-0 group-valid:opacity-100">
-                    {/* Check icon placeholder for valid state */}
-                  </div>
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <span className="material-symbols-outlined text-[20px]">person</span>
+                  </span>
+                  <input className="form-input peer block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out invalid:not(:placeholder-shown):border-pink-500 invalid:not(:placeholder-shown):text-pink-600 focus:invalid:border-pink-500 focus:invalid:ring-pink-500" id="name" name="name" placeholder="請輸入您的全名" required type="text" />
+                  <p className="hidden peer-invalid:not(:placeholder-shown):block mt-1 text-xs text-pink-500">請輸入有效的姓名</p>
                 </div>
               </div>
 
-              {/* Email Field with Validation State Example */}
               <div>
-                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="email">電子郵件</label>
+                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="email">電子郵件 <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <span className="material-symbols-outlined text-[20px]">mail</span>
                   </span>
-                  <input className="form-input block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out" id="email" name="email" placeholder="name@example.com" type="email" />
+                  <input className="form-input peer block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out invalid:not(:placeholder-shown):border-pink-500 invalid:not(:placeholder-shown):text-pink-600 focus:invalid:border-pink-500 focus:invalid:ring-pink-500" id="email" name="email" placeholder="name@example.com" required type="email" />
+                  <p className="hidden peer-invalid:not(:placeholder-shown):block mt-1 text-xs text-pink-500">請輸入有效的電子郵件地址</p>
+                  <p className="peer-invalid:not(:placeholder-shown):hidden mt-1 text-xs text-[#617f89] dark:text-gray-500">我們將發送驗證信至此信箱。</p>
                 </div>
-                {/* Helper Text */}
-                <p className="mt-1 text-xs text-[#617f89] dark:text-gray-500">我們將發送驗證信至此信箱。</p>
               </div>
 
-              {/* Password Field */}
               <div>
-                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="password">密碼</label>
+                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="password">密碼 <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <span className="material-symbols-outlined text-[20px]">lock</span>
                   </span>
-                  <input className="form-input block w-full pl-10 pr-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out" id="password" name="password" placeholder="設定密碼 (至少8個字元)" type="password" />
+                  <input className="form-input peer block w-full pl-10 pr-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out invalid:not(:placeholder-shown):border-pink-500 invalid:not(:placeholder-shown):text-pink-600 focus:invalid:border-pink-500 focus:invalid:ring-pink-500" id="password" minLength={8} name="password" placeholder="設定密碼 (至少8個字元)" required type="password" />
                   <button className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" type="button">
                     <span className="material-symbols-outlined text-[20px]">visibility_off</span>
                   </button>
+                  <p className="hidden peer-invalid:not(:placeholder-shown):block mt-1 text-xs text-pink-500">密碼需至少包含 8 個字元</p>
                 </div>
-                {/* Password Strength Indicator */}
                 <div className="mt-2 flex gap-1 h-1">
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div className="w-2/3 h-full bg-yellow-400"></div>
@@ -98,36 +96,45 @@ export default function RegisterPage() {
                 <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-500">密碼強度：中等</p>
               </div>
 
-              {/* Confirm Password Field */}
               <div>
-                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="confirm-password">確認密碼</label>
+                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="confirm-password">確認密碼 <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <span className="material-symbols-outlined text-[20px]">lock_reset</span>
                   </span>
-                  <input className="form-input block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out" id="confirm-password" name="confirm-password" placeholder="再次輸入密碼" type="password" />
+                  <input className="form-input peer block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out invalid:not(:placeholder-shown):border-pink-500 focus:invalid:border-pink-500" id="confirm-password" name="confirm-password" placeholder="再次輸入密碼" required type="password" />
+                  <p className="hidden peer-invalid:not(:placeholder-shown):block mt-1 text-xs text-pink-500">請再次確認您的密碼</p>
                 </div>
               </div>
 
-              {/* Terms and Privacy */}
-              <div className="flex items-start">
+              <div>
+                <label className="block text-sm font-medium text-[#111618] dark:text-gray-200 mb-1.5" htmlFor="teacher-code">教師代碼 <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <span className="material-symbols-outlined text-[20px]">school</span>
+                  </span>
+                  <input className="form-input peer block w-full pl-10 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2d36] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary sm:text-sm h-12 focus:shadow-[0_0_0_4px_rgba(19,182,236,0.1)] transition-all duration-200 ease-in-out invalid:not(:placeholder-shown):border-pink-500 invalid:not(:placeholder-shown):text-pink-600 focus:invalid:border-pink-500 focus:invalid:ring-pink-500" id="teacher-code" name="teacher-code" placeholder="請輸入教師代碼" required type="text" />
+                  <p className="hidden peer-invalid:not(:placeholder-shown):block mt-1 text-xs text-pink-500">教師代碼為必填欄位</p>
+                  <p className="peer-invalid:not(:placeholder-shown):hidden mt-1 text-xs text-[#617f89] dark:text-gray-500">請輸入課程導師提供的專屬代碼以完成註冊驗證。</p>
+                </div>
+              </div>
+
+              <div className="flex items-start pt-2">
                 <div className="flex items-center h-5">
-                  <input className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded dark:bg-[#1e2d36] dark:border-gray-600" id="terms" name="terms" type="checkbox" />
+                  <input className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded dark:bg-[#1e2d36] dark:border-gray-600 cursor-pointer" id="terms" name="terms" required type="checkbox" />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label className="font-medium text-gray-700 dark:text-gray-300" htmlFor="terms">
+                  <label className="font-medium text-gray-700 dark:text-gray-300 select-none" htmlFor="terms">
                     我已閱讀並同意 <Link className="text-primary hover:text-cyan-600 hover:underline" href="/legal/terms">使用者條款</Link> 與 <Link className="text-primary hover:text-cyan-600 hover:underline" href="/legal/privacy">隱私政策</Link>
                   </label>
                 </div>
               </div>
 
-              {/* Submit Button */}
               <button className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
                 立即註冊
               </button>
 
-              {/* Divider */}
-              <div className="relative">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
                 </div>
@@ -136,7 +143,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Social Login (Optional) */}
               <button className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-[#1e2d36] text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none transition-colors" type="button">
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>

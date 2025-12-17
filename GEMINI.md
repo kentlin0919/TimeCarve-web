@@ -2,16 +2,16 @@
 
 ## 專案概述
 
-這是一個基於 **Next.js (React)** 構建的現代化網頁應用程式專案。專案採用 **TypeScript** 進行開發，並使用 **Tailwind CSS** 進行樣式處理。資料庫則使用 **Supabase (PostgreSQL)**。此專案旨在提供一個完整的學生端前台功能及教師管理端後台功能。
+這是一個基於 **Next.js (App Router)** 構建的現代化網頁應用程式專案，針對 **Static Export (GitHub Pages)** 進行了優化。專案整合了學生端前台與教師管理端後台，提供完整的課程預約、作品集展示及學員管理功能。
 
 ## 技術堆疊
 
-- **前端框架:** [Next.js](https://nextjs.org/) (App Router) with [React](https://react.dev/)
-- **後端服務/資料庫:** [Supabase](https://supabase.com/) (PostgreSQL)
+- **前端框架:** [Next.js 16](https://nextjs.org/) (App Router)
+- **架構模式:** Static Export (`output: export`)
+- **後端服務:** [Supabase](https://supabase.com/) (PostgreSQL + Auth)
 - **語言:** [TypeScript](https://www.typescriptlang.org/)
-- **樣式:** [Tailwind CSS](https://tailwindcss.com/)
-- **字體:** `next/font` (Geist Sans & Geist Mono)
-- **套件管理:** pnpm (根據 `pnpm-lock.yaml` 推斷)
+- **樣式:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **部署:** GitHub Pages (via GitHub Actions)
 
 ## 快速開始
 
@@ -19,197 +19,100 @@
 
 ```bash
 pnpm install
-# 或使用 npm / yarn / bun
 ```
 
 ### 2. 啟動開發伺服器
 
 ```bash
 pnpm dev
+# 訪問 http://localhost:3000
 ```
-
-瀏覽器打開 [http://localhost:3000](http://localhost:3000) 查看結果。
 
 ### 3. 建置生產版本
 
+此指令會生成 `out` 資料夾，包含完整的靜態網站檔案。
+
 ```bash
 pnpm build
-pnpm start
-```
-
-### 4. 程式碼品質檢查
-
-```bash
-pnpm lint
 ```
 
 ## 專案結構
 
-主要採用 Next.js App Router 結構：
+```
+app/
+├─ layout.tsx                     # Root layout
+├─ not-found.tsx                  # 404 頁面
+├─ error.tsx                      # 錯誤處理
+│
+├─ components/                    # 共用組件
+│  └─ AuthGuard.tsx               # 客戶端權限守衛 (Client-side Auth)
+│
+├─ (public)/                      # 公開頁面 (無需登入)
+│  ├─ page.tsx                    # 首頁
+│  ├─ auth/                       # 登入/註冊 (Client Form)
+│  ├─ courses/                    # 課程瀏覽
+│  │  └─ [courseId]/              # 課程詳情 (需 generateStaticParams)
+│  └─ teachers/                   # 教師介紹
+│
+├─ student/                       # 學生專區 (受 AuthGuard 保護)
+│  ├─ layout.tsx                  # 包含 <AuthGuard>
+│  ├─ dashboard/                  # 儀表板
+│  ├─ booking/                    # 預約系統
+│  └─ profile/                    # 個人檔案
+│
+└─ teacher/                       # 教師後台 (受 AuthGuard 保護)
+   ├─ layout.tsx                  # 包含 <AuthGuard>
+   ├─ courses/                    # 課程管理 Editor
+   ├─ students/                   # 學生管理 CRM
+   └─ reports/                    # 營收報表
+```
 
-- **`app/`**: 應用程式的主要程式碼，詳細結構如下：
-  ```
-  app/
-  ├─ layout.tsx                     # Root layout（全站）
-  ├─ not-found.tsx                  # 全站 404
-  ├─ error.tsx                      # 全站錯誤 fallback
-  ├─ middleware.ts                  # 權限 / role guard（可選）
+## 核心架構說明
 
-  ├─ (public)/                      # Route Group: 未登入可存取，對應根路徑
-  │  ├─ layout.tsx                  # 公開頁面 layout（navbar / footer）
-  │  ├─ page.tsx                    # 首頁＋作品集（URL: /）
-  │  │
-  │  ├─ courses/
-  │  │  ├─ page.tsx                 # 課程方案列表（URL: /courses）
-  │  │  └─ [courseId]/
-  │     │     └─ page.tsx           # 課程方案公開詳細頁
-  │  │
-  │  ├─ teachers/
-  │  │  └─ [teacherId]/
-  │     │     └─ page.tsx           # 教師公開介紹頁
-  │  │
-  │  ├─ auth/                       # URL: /auth/...
-  │  │  ├─ layout.tsx
-  │  │  ├─ login/
-  │  │  │  └─ page.tsx
-  │  │  ├─ register/
-  │  │  │  └─ page.tsx
-  │  │  ├─ forgot-password/
-  │  │  │  └─ page.tsx
-  │  │  ├─ reset-password/
-  │  │  │  └─ page.tsx
-  │  │  └─ verify/
-  │  │     └─ page.tsx
-  │  │
-  │  └─ legal/                      # URL: /legal/...
-  │     ├─ terms/
-  │     │  └─ page.tsx
-  │     └─ privacy/
-  │        └─ page.tsx
-  │
-  ├─ student/                       # URL Prefix: /student/...
-  │  ├─ layout.tsx                  # Student layout
-  │  │
-  │  ├─ dashboard/
-  │  │  └─ page.tsx                 # URL: /student/dashboard
-  │  │
-  │  ├─ booking/
-  │  │  ├─ page.tsx                 # 預約課程介面
-  │  │  ├─ success/
-  │  │  │  └─ page.tsx              # 預約成功（補缺）
-  │  │  ├─ error/
-  │  │  │  └─ page.tsx              # 預約失敗（補缺）
-  │  │  └─ [bookingId]/
-  │  │     └─ reschedule/
-  │  │        └─ page.tsx           # 改期頁（補缺）
-  │  │
-  │  ├─ courses/
-  │  │  └─ page.tsx                 # 我已購買 / 已報名的課程
-  │  │
-  │  ├─ notifications/
-  │  │  └─ page.tsx                 # 學生通知中心（補缺）
-  │  │
-  │  └─ profile/
-  │     └─ page.tsx                 # 編輯個人檔案（學生）
-  │
-  ├─ teacher/                       # 教師 / Admin 後台
-  │  ├─ layout.tsx                  # Teacher layout（嚴格 role guard）
-  │  │
-  │  ├─ dashboard/
-  │  │  └─ page.tsx                 # 教師管理後台總覽
-  │  │
-  │  ├─ courses/
-  │  │  ├─ page.tsx                 # 課程方案管理
-  │  │  └─ [courseId]/
-  │  │     └─ edit/
-  │  │        └─ page.tsx           # 課程方案詳細編輯
-  │  │
-  │  ├─ lesson-plans/
-  │  │  ├─ page.tsx                 # 教案列表
-  │  │  └─ [planId]/
-  │  │     └─ edit/
-  │  │        └─ page.tsx           # 教案設定
-  │  │
-  │  ├─ bookings/
-  │  │  └─ page.tsx                 # 預約管理
-  │  │
-  │  ├─ students/
-  │  │  ├─ page.tsx                 # 學生列表（搜尋）
-  │  │  └─ [studentId]/
-  │  │     └─ page.tsx              # 學生詳細（分頁：預約 / 筆記 / 作品）
-  │  │
-  │  ├─ portfolio/
-  │  │  ├─ page.tsx                 # 作品集管理
-  │  │  └─ [workId]/
-  │  │     └─ edit/
-  │  │        └─ page.tsx           # 作品詳細編輯（富文本）
-  │  │
-  │  ├─ reports/
-  │  │  └─ revenue/
-  │  │     └─ page.tsx              # 營收報表
-  │  │
-  │  ├─ notifications/
-  │  │  └─ page.tsx                 # 教師通知中心（補缺）
-  │  │
-  │  ├─ settings/
-  │  │  └─ page.tsx                 # 系統設定（時段 / 規則）
-  │  │
-  │  └─ profile/
-  │     └─ page.tsx                 # 教師個人檔案
-  │
-  └─ api/                           # Route Handlers / Server Actions
-     ├─ auth/
-     ├─ courses/
-     ├─ bookings/
-     ├─ lesson-plans/
-     ├─ students/
-     ├─ portfolio/
-     └─ reports/
-  ```
-- **`public/`**: 存放靜態資源（如圖片、SVG）。
-- **設定檔**:
-  - `next.config.ts`: Next.js 設定。
-  - `tailwind.config.ts`: (如果存在，v4 可能直接在 CSS 中設定或自動偵測，目前依賴 `postcss.config.mjs`)。
-  - `tsconfig.json`: TypeScript 設定。
+### 1. Static Export (靜態輸出)
 
-## 開發規範
+本專案設定為 `output: export` 以支援 GitHub Pages 部署。這意味著：
 
-- **組件:** 優先使用 React Server Components (RSC)，需要互動時使用 `'use client'`。
-- **樣式:** 使用 Tailwind CSS Utility classes 進行開發。
-- **路徑:** 遵循 Next.js App Router 的資料夾路由規則。
+- **不支援 Node.js Runtime 功能** (如 `getServerSideProps`, Middleware)。
+- 所有 API 請求需由客戶端 (Client-side) 發起，直接對接 Supabase。
+- `next/image` 需設定 loader 或使用雲端圖片服務。
 
-## 常用指令列表
+### 2. 動態路由 (Dynamic Routes)
 
-| 指令    | 說明                   |
-| ------- | ---------------------- |
-| `dev`   | 啟動開發環境           |
-| `build` | 建置生產版本           |
-| `start` | 執行已建置的生產版本   |
-| `lint`  | 執行 ESLint 檢查程式碼 |
+所有帶參數的路徑 (如 `[id]`) 必須實作 `generateStaticParams`，在建置時期預先生成 HTML。
 
----
+```tsx
+// 範例
+export async function generateStaticParams() {
+  return [{ id: "demo" }]; // 回傳所有可能的參數組合
+}
+```
 
-## 專案功能詳情
+### 3. 權限管理 (Client-side Auth)
 
-### 1. 系統核心與基礎架構
+由於無法使用 Middleware，我們採用前端攔截策略：
 
-- **技術棧：** Next.js (React) + Supabase (PostgreSQL) + Tailwind CSS。
-- **身份驗證系統：** 支援學生註冊/登入、教師後台權限管理。
-- **專案建置：** 包含 Git 版本控制、資料庫 schema 設計、GitHub Pages 自動化部署設定。
+- **`AuthGuard.tsx`**: 檢查瀏覽器 Cookie/LocalStorage。
+- 若無登入憑證，自動導向 `/auth/login`。
+- 所有後台頁面 (`/student`, `/teacher`) 皆透過 Layout 包覆此守衛。
 
-### 2. 前台 (學生端)
+### 4. GitHub Actions 部署
 
-- **首頁與作品集：** 現代化 RWD 響應式設計，展示作品集與教學理念。
-- **課程方案列表：** 卡片式設計，清晰展示課程內容、價格與大綱。
-- **預約課程系統：** 直觀的日期與時段選擇器，防止重複預約邏輯。
-- **學生儀表板：** 查看已預約課程、學習進度追蹤、個人資料管理。
+專案包含 `.github/workflows/deploy.yml`，每次推送到 `main` 分支時：
 
-### 3. 後台 (教師管理端)
+1. 自動執行 `pnpm install` 與 `pnpm build`。
+2. 將 `out` 資料夾部署至 GitHub Pages environment。
 
-- **教師儀表板：** 系統概況總覽。
-- **課程與教案管理：** 新增、編輯、刪除課程方案與詳細教案內容。
-- **作品集管理 (CMS)：** 富文本編輯器，支援圖片上傳與作品說明撰寫。
-- **預約管理系統：** 查看學生預約請求，執行確認、改期或取消操作。
-- **學生資訊管理 (CRM)：** 學生專屬頁面，記錄學習筆記、預約歷史與學生作品集。
-- **營收報表：** 圖表化顯示營收總額與趨勢分析。
-- **個人檔案設定：** 編輯教師簡介與聯絡資訊。
+## 功能模組詳情
+
+### 前台 (學生端)
+
+- **首頁與作品集:** RWD 響應式設計，高互動性 UI。
+- **課程方案:** 靜態生成的課程列表與詳情頁。
+- **學員系統:** 登入後可管理預約、查看課程內容。
+
+### 後台 (教師管理端)
+
+- **課程管理:** 編輯課程內容與教案 (支援富文本)。
+- **預約系統:** 管理學生預約請求。
+- **CRM:** 追蹤學生學習進度與作品集。
