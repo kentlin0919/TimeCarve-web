@@ -32,14 +32,41 @@ function LoginContent() {
     setLoginError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       });
 
-      if (error) throw error;
-      
-      router.push(redirect);
+      if (authError) throw authError;
+
+      if (user) {
+        // Get identity ID using RPC (Security Definer)
+        console.log('Fetching identity_id...');
+        const { data: identityId, error: rpcError } = await supabase.rpc('get_identity_id');
+
+        console.log('Identity ID:', identityId);
+        if (rpcError) {
+          console.error('Error fetching identity:', rpcError);
+          console.log('Redirecting to default:', redirect);
+          router.push(redirect);
+          return;
+        }
+
+        // Redirect based on identity_id
+        switch (identityId) {
+          case 1: // Super Admin
+            router.push('/admin/dashboard');
+            break;
+          case 2: // Teacher
+            router.push('/teacher/dashboard');
+            break;
+          case 3: // Student
+            router.push('/student/dashboard');
+            break;
+          default:
+            router.push(redirect);
+        }
+      }
     } catch (error: any) {
       setLoginError(error.message || '登入失敗，請稍後再試');
     } finally {

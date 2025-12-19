@@ -7,6 +7,7 @@
 ## 技術堆疊
 
 - **前端框架:** [Next.js 16](https://nextjs.org/) (App Router)
+- **前端圖表:** [Chart.js](https://www.chartjs.org/)
 - **架構模式:** Static Export (`output: export`)
 - **後端服務:** [Supabase](https://supabase.com/) (PostgreSQL + Auth)
 - **語言:** [TypeScript](https://www.typescriptlang.org/)
