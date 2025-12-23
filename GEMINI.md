@@ -115,6 +115,48 @@ export async function generateStaticParams() {
    - `NEXT_PUBLIC_SUPABASE_URL`: 您的 Supabase Project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: 您的 Supabase Project API Key (Anon)
 
+### 6. Clean Architecture (整潔架構)
+
+本專案鼓勵採用 Clean Architecture (整潔架構) 的設計原則，以實現高可維護性、高可測試性及框架獨立性。雖然這是一個前端專案，但其核心思想對於複雜邏輯的組織與擴展至關重要。
+
+**核心原則**：
+
+*   **獨立於框架 (Framework Independence)**：架構不應依賴於特定函式庫或框架（如 Next.js）。
+*   **可測試性 (Testability)**：業務邏輯應能獨立於 UI、資料庫、API 等外部因素進行測試。
+*   **獨立於 UI (UI Independence)**： UI 可以在不改變系統其他部分的情況下輕鬆替換。
+*   **獨立於資料庫 (Database Independence)**：資料庫可以輕鬆替換（例如從 Supabase 換到 Firebase）。
+
+**分層與應用**：
+
+儘管前端專案無法完全實現如傳統後端般嚴格的四層結構，但可以借鑒其核心思想，將應用程式邏輯劃分為以下層次：
+
+1.  **領域層 (Domain Layer)**
+    *   **內容**：定義應用程式的核心實體 (Entities)、業務規則 (Business Rules) 和通用介面 (Interfaces)。它是應用程式最內層，不依賴任何其他層。
+    *   **本專案應用**：定義學生、教師、課程、預約等核心資料結構 (TypeScript Interfaces/Types)，以及這些資料操作的通用規則。
+
+2.  **應用層 (Application Layer)**
+    *   **內容**：包含應用程式的特定業務邏輯 (Use Cases)，協調領域層實體來完成特定功能。它定義了資料如何進出系統，並定義了資料庫（或外部服務）的抽象介面 (Repository Interfaces)。
+    *   **本專案應用**：定義如 `bookCourseUseCase` (預約課程)、`updateUserProfileUseCase` (更新用戶資料) 等操作。這些 Use Case 會依賴在領域層定義的介面（例如 `UserRepository`, `CourseRepository`）。
+
+3.  **基礎設施層 (Infrastructure Layer)**
+    *   **內容**：實作應用層定義的所有抽象介面，處理與外部服務的互動。
+    *   **本專案應用**：
+        *   **資料庫實作**：使用 `@supabase/supabase-js` 實際呼叫 Supabase 進行資料的 CRUD 操作，實作 `UserRepositoryImpl`, `CourseRepositoryImpl` 等。
+        *   **身份驗證**：Supabase Auth 相關的 API 呼叫。
+        *   **服務整合**：未來可能包含其他第三方服務的 API 呼叫。
+
+4.  **表示層 (Presentation Layer)**
+    *   **內容**：UI 層，負責資料的呈現與使用者互動。它不包含任何業務邏輯，只負責協調應用層的 Use Cases 並呈現結果。
+    *   **本專案應用**：Next.js 的 `app` Router 頁面、共用元件 (Components)、Hooks 等，它們呼叫應用層定義的 Use Cases，並將結果呈現在畫面上。
+
+**優勢**：
+
+*   **易於測試**：核心業務邏輯 (領域層和應用層) 可以獨立測試，無需模擬 UI 或資料庫。
+*   **易於維護**：各層職責分離，修改某一層通常不會影響到其他層。
+*   **靈活性**：可輕鬆替換技術棧，例如將 Supabase 替換為其他後端服務，只需修改基礎設施層的實作。
+
+透過這種分層，即使專案規模擴大，也能保持清晰的結構與良好的可擴展性。
+
 ## 功能模組詳情
 
 ### 前台 (學生端)

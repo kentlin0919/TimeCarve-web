@@ -1,5 +1,6 @@
 {
   "deno.enable": true,
   "deno.unstable": true,
-  "deno.enablePaths": ["supabase/functions"]
+  "deno.enablePaths": ["supabase/functions"],
+  "cSpell.words": ["Supabase"]
 }
