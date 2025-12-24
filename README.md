@@ -1,4 +1,4 @@
-# 牙體雕刻家教中心 (Denture Art Web)
+# TimeCarve-web
 
 這是一個專為牙體技術教學設計的現代化平台，整合了課程展示、線上預約與教學管理系統。專案採用 **Next.js (App Router)** 構建，並針對 **GitHub Pages** 進行了靜態輸出 (Static Export) 優化。
 
