@@ -40,5 +40,3 @@ supabase/.branches
 supabase/.temp
 supabase/functions/*/deno.lock
 supabase/functions/*/target/
-supabase/migrations/
-supabase/seed.sql
