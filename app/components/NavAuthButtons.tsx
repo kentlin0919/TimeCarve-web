@@ -13,14 +13,26 @@ export default function NavAuthButtons() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const checkUser = async () => {
       try {
-        const u = await authService.getUser();
-        setUser(u);
+        // Add 5s timeout to prevent infinite loading
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("Auth check timed out")), 5000)
+        );
+
+        const u = await Promise.race([authService.getUser(), timeoutPromise]);
+
+        if (mounted) {
+          setUser(u);
+        }
       } catch (error) {
         console.error("Error checking user:", error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -28,6 +40,7 @@ export default function NavAuthButtons() {
 
     // Listen for auth changes
     const subscription = authService.onAuthStateChange((event, session) => {
+      if (!mounted) return;
       if (session?.user) {
         setUser(session.user);
       } else {
@@ -36,6 +49,7 @@ export default function NavAuthButtons() {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -78,7 +92,7 @@ export default function NavAuthButtons() {
         登入
       </Link>
       <Link
-        href="/auth/register"
+        href="/auth/login"
         className="flex h-10 cursor-pointer items-center justify-center rounded-full bg-primary px-6 text-white text-sm font-bold shadow-glow hover:bg-primary-dark hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95"
       >
         <span className="truncate">註冊體驗</span>
