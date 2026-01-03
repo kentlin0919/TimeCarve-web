@@ -14,6 +14,8 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     // Get query params
@@ -50,8 +52,32 @@ export default function ResetPasswordPage() {
     };
   }, [router]);
 
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumberOrSymbol = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
+    password
+  );
+  const isStrongPassword = (value: string) =>
+    value.length >= 8 &&
+    /[A-Z]/.test(value) &&
+    /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value);
+  const strengthScore =
+    (hasMinLength ? 1 : 0) +
+    (hasUppercase ? 1 : 0) +
+    (hasNumberOrSymbol ? 1 : 0);
+  const passwordsMatch =
+    password.length > 0 &&
+    confirmPassword.length > 0 &&
+    password === confirmPassword;
+  const canSubmit =
+    !loading && isStrongPassword(password) && passwordsMatch;
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isStrongPassword(password)) {
+      setError("密碼強度不足，請符合提示條件");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("新密碼確認不一致");
       return;
@@ -239,46 +265,78 @@ export default function ResetPasswordPage() {
                       name="new_password"
                       placeholder="••••••••"
                       required
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                     <button
                       className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-slate-400 hover:text-primary transition-colors"
                       type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
                     >
                       <span className="material-symbols-outlined text-[20px]">
-                        visibility_off
+                        {showPassword ? "visibility" : "visibility_off"}
                       </span>
                     </button>
                   </div>
                   <div className="pt-1 px-1">
                     <div className="flex gap-1.5 h-1.5 mb-2 rounded-full overflow-hidden bg-slate-100 dark:bg-gray-800">
-                      <div className="w-1/4 h-full bg-primary/60"></div>
-                      <div className="w-1/4 h-full bg-slate-200 dark:bg-gray-700"></div>
-                      <div className="w-1/4 h-full bg-slate-200 dark:bg-gray-700"></div>
-                      <div className="w-1/4 h-full bg-slate-200 dark:bg-gray-700"></div>
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className={`h-full ${
+                            index < strengthScore
+                              ? "bg-primary/60"
+                              : "bg-slate-200 dark:bg-gray-700"
+                          }`}
+                          style={{ width: "25%" }}
+                        ></div>
+                      ))}
                     </div>
                     <ul className="mt-2 space-y-1.5 text-xs text-slate-500 dark:text-gray-400">
-                      <li className="flex items-center gap-2 text-emerald-500 font-medium">
+                      <li
+                        className={`flex items-center gap-2 ${
+                          hasMinLength
+                            ? "text-emerald-500 font-medium"
+                            : "text-slate-500 dark:text-gray-400"
+                        }`}
+                      >
                         <span className="material-symbols-outlined text-[16px]">
-                          check_circle
+                          {hasMinLength ? "check_circle" : "radio_button_unchecked"}
                         </span>
                         <span className="text-slate-700 dark:text-gray-300">
                           至少 8 個字元
                         </span>
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-slate-300">
-                          radio_button_unchecked
+                      <li
+                        className={`flex items-center gap-2 ${
+                          hasUppercase
+                            ? "text-emerald-500 font-medium"
+                            : "text-slate-500 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {hasUppercase ? "check_circle" : "radio_button_unchecked"}
                         </span>
-                        <span>包含大寫字母</span>
+                        <span className="text-slate-700 dark:text-gray-300">
+                          包含大寫字母
+                        </span>
                       </li>
-                      <li className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-slate-300">
-                          radio_button_unchecked
+                      <li
+                        className={`flex items-center gap-2 ${
+                          hasNumberOrSymbol
+                            ? "text-emerald-500 font-medium"
+                            : "text-slate-500 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {hasNumberOrSymbol
+                            ? "check_circle"
+                            : "radio_button_unchecked"}
                         </span>
-                        <span>包含數字或特殊符號</span>
+                        <span className="text-slate-700 dark:text-gray-300">
+                          包含數字或特殊符號
+                        </span>
                       </li>
                     </ul>
                   </div>
@@ -297,23 +355,45 @@ export default function ResetPasswordPage() {
                       </span>
                     </div>
                     <input
-                      className="block w-full rounded-xl border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 py-3.5 pl-11 pr-4 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:ring-primary sm:text-sm transition-shadow outline-none"
+                      className="block w-full rounded-xl border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 py-3.5 pl-11 pr-12 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:ring-primary sm:text-sm transition-shadow outline-none"
                       id="confirm_password"
                       name="confirm_password"
                       placeholder="••••••••"
                       required
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
+                    <button
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-slate-400 hover:text-primary transition-colors"
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword((prev) => !prev)
+                      }
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {showConfirmPassword ? "visibility" : "visibility_off"}
+                      </span>
+                    </button>
                   </div>
+                  {confirmPassword.length > 0 && (
+                    <p
+                      className={`text-xs ${
+                        passwordsMatch
+                          ? "text-emerald-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {passwordsMatch ? "密碼一致" : "密碼不一致"}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <button
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-[#0fa0d1] text-white py-3.5 px-4 text-sm font-bold shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
-                disabled={loading}
+                disabled={!canSubmit}
               >
                 {loading ? "更新中..." : "完成設定"}
               </button>

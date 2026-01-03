@@ -47,25 +47,53 @@ export default function CourseDetailForm({
     setForm((prev) => ({ ...prev, ...initialData }));
   }, [initialData]);
 
-  // Fetch course types
-  useEffect(() => {
-    const fetchTypes = async () => {
-      const { data } = await supabase
-        .from("class_type")
-        .select("name, label_zh")
-        .eq("is_active", true)
-        .order("created_at", { ascending: true });
+      // Fetch course types
 
-      if (data) {
-        setCourseTypes(data);
-        if (!initialData.courseType && data.length > 0) {
-          setForm((prev) => ({ ...prev, courseType: data[0].name }));
-        }
-      }
-    };
-    fetchTypes();
-  }, [initialData.courseType]); // Depend on initialData.courseType to re-evaluate if needed
-  // Fetch global tags
+      useEffect(() => {
+
+        const fetchTypes = async () => {
+
+          const { data, error } = await supabase
+
+            .from("class_type")
+
+            .select("name, label_zh")
+
+            .eq("is_active", true)
+
+            .order("created_at", { ascending: true });
+
+          
+
+          if (error) {
+
+            console.error("Error fetching class_type for form:", error);
+
+          }
+
+          
+
+          if (data) {
+
+            setCourseTypes(data);
+
+            if (!initialData.courseType && data.length > 0) {
+
+               setForm((prev) => ({ ...prev, courseType: data[0].name }));
+
+            }
+
+          }
+
+        };
+
+        fetchTypes();
+
+      }, [initialData.courseType]); // Depend on initialData.courseType to re-evaluate if needed
+
+  
+
+    // Fetch global tags
   useEffect(() => {
     const fetchGlobalTags = async () => {
       const { data } = await supabase

@@ -63,7 +63,7 @@ export default function TeacherProfileForm({
       alert("儲存成功！");
     } catch (e) {
       console.error(e);
-      alert("儲存失敗，請重試。");
+      alert(`儲存失敗：${(e as Error).message || "請稍後再試"}`);
     } finally {
       setSaving(false);
     }
@@ -336,10 +336,14 @@ export default function TeacherProfileForm({
                   </label>
                   <input
                     type="number"
-                    value={profile.experienceYears || 0}
+                    value={profile.experienceYears ?? ""}
                     onChange={(e) =>
-                      handleChange("experienceYears", Number(e.target.value))
+                      handleChange(
+                        "experienceYears",
+                        e.target.value === "" ? null : Number(e.target.value)
+                      )
                     }
+                    placeholder="0"
                     className="w-full px-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
@@ -353,10 +357,14 @@ export default function TeacherProfileForm({
                     </span>
                     <input
                       type="number"
-                      value={profile.basePrice || 0}
+                      value={profile.basePrice ?? ""}
                       onChange={(e) =>
-                        handleChange("basePrice", Number(e.target.value))
+                        handleChange(
+                          "basePrice",
+                          e.target.value === "" ? null : Number(e.target.value)
+                        )
                       }
+                      placeholder="0"
                       className="w-full pl-8 pr-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
@@ -412,9 +420,7 @@ export default function TeacherProfileForm({
             </div>
             <div className="space-y-4">
               {(profile.philosophyItems || []).length === 0 && (
-                <p className="text-sm text-text-sub">
-                  尚未設定教學理念卡片。
-                </p>
+                <p className="text-sm text-text-sub">尚未設定教學理念卡片。</p>
               )}
               {(profile.philosophyItems || []).map((item, index) => (
                 <div
@@ -474,11 +480,7 @@ export default function TeacherProfileForm({
                         type="text"
                         value={item.title}
                         onChange={(e) =>
-                          handlePhilosophyChange(
-                            index,
-                            "title",
-                            e.target.value
-                          )
+                          handlePhilosophyChange(index, "title", e.target.value)
                         }
                         className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                       />

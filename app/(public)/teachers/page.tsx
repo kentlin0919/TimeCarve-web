@@ -158,26 +158,8 @@ function TeachersContent() {
     )}&background=EEF2FF&color=1F2937&size=500`;
   const specialties = profile.specialties || [];
   const experienceYears = profile.experience_years ?? 0;
-  const philosophyItems =
-    profile.philosophy_items && profile.philosophy_items.length > 0
-      ? profile.philosophy_items
-      : [
-          {
-            icon: "psychology",
-            title: "幾何解構思維",
-            description: "將複雜的形態簡化為幾何邏輯，讓學習更具條理。",
-          },
-          {
-            icon: "visibility",
-            title: "光影美學訓練",
-            description: "強調從不同角度觀察光影變化，培養精準美感。",
-          },
-          {
-            icon: "handshake",
-            title: "溫柔耐心的陪伴",
-            description: "理解學習瓶頸，提供溫暖且具體的調整建議。",
-          },
-        ];
+  const philosophyItems = profile.philosophy_items || [];
+  const hasPhilosophyItems = philosophyItems.length > 0;
 
   return (
     <div className="relative flex min-h-screen w-full flex-col group/design-root bg-background-light dark:bg-background-dark text-[#111618] dark:text-[#f0f3f4] font-display overflow-x-hidden selection:bg-primary selection:text-white">
@@ -360,43 +342,45 @@ function TeachersContent() {
             </div>
           </section>
 
-          <section className="py-16 sm:py-24" id="philosophy">
-            <div className="flex flex-col gap-10">
-              <div className="flex flex-col gap-3 max-w-2xl">
-                <span className="text-primary font-bold tracking-wider text-xs uppercase">
-                  Philosophy
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-black text-[#111618] dark:text-white tracking-tight">
-                  我的教學理念
-                </h2>
-                <p className="text-lg text-gray-500 dark:text-gray-400 font-light">
-                  {bio}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {philosophyItems.map((item) => (
-                  <div
-                    key={item.title}
-                    className="group flex flex-col gap-5 rounded-2xl bg-white dark:bg-[#1a2c32] p-8 shadow-soft border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-primary/20"
-                  >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                      <span className="material-symbols-outlined text-3xl">
-                        {item.icon}
-                      </span>
+          {hasPhilosophyItems && (
+            <section className="py-16 sm:py-24" id="philosophy">
+              <div className="flex flex-col gap-10">
+                <div className="flex flex-col gap-3 max-w-2xl">
+                  <span className="text-primary font-bold tracking-wider text-xs uppercase">
+                    Philosophy
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-black text-[#111618] dark:text-white tracking-tight">
+                    我的教學理念
+                  </h2>
+                  <p className="text-lg text-gray-500 dark:text-gray-400 font-light">
+                    {bio}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {philosophyItems.map((item) => (
+                    <div
+                      key={item.title}
+                      className="group flex flex-col gap-5 rounded-2xl bg-white dark:bg-[#1a2c32] p-8 shadow-soft border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-primary/20"
+                    >
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <span className="material-symbols-outlined text-3xl">
+                          {item.icon}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-[#111618] dark:text-white mb-3">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#111618] dark:text-white mb-3">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                        {item.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <section
             className="py-16 sm:py-24 border-t border-gray-100 dark:border-gray-800"

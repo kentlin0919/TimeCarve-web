@@ -8,10 +8,21 @@ interface Tag {
   name: string;
   teacher_id: string | null;
   created_at: string;
+  teacher_info?: {
+    user_info: {
+      name: string;
+    } | null;
+  } | null;
+}
+
+interface TeacherOption {
+  id: string;
+  name: string;
 }
 
 export default function TagsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentTag, setCurrentTag] = useState<Partial<Tag>>({});
@@ -19,20 +30,49 @@ export default function TagsPage() {
 
   useEffect(() => {
     fetchTags();
+    fetchTeachers();
   }, []);
+
+  const fetchTeachers = async () => {
+    const { data, error } = await supabase
+      .from("teacher_info")
+      .select(`
+        id,
+        user_info!inner (
+          name
+        )
+      `);
+    
+    if (error) {
+      console.error("Error fetching teachers:", error);
+    } else {
+      const formattedTeachers = data.map((t: any) => ({
+        id: t.id,
+        name: t.user_info?.name || "Unknown Teacher",
+      }));
+      setTeachers(formattedTeachers);
+    }
+  };
 
   const fetchTags = async () => {
     setLoading(true);
     // Admin should be able to see all tags
     const { data, error } = await supabase
       .from("tags")
-      .select("*")
+      .select(`
+        *,
+        teacher_info (
+          user_info (
+            name
+          )
+        )
+      `)
       .order("created_at", { ascending: true });
 
     if (error) {
       console.error("Error fetching tags:", error);
     } else {
-      setTags(data || []);
+      setTags(data as any || []);
     }
     setLoading(false);
   };
@@ -107,7 +147,7 @@ export default function TagsPage() {
           <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 text-sm font-medium">
             <tr>
               <th className="px-6 py-4">標籤名稱</th>
-              <th className="px-6 py-4">所屬教師 ID</th>
+              <th className="px-6 py-4">所屬教師</th>
               <th className="px-6 py-4">建立時間</th>
               <th className="px-6 py-4 text-right">操作</th>
             </tr>
@@ -132,7 +172,17 @@ export default function TagsPage() {
                     {tag.name}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {tag.teacher_id ? tag.teacher_id : <span className="italic text-gray-400">(全域標籤)</span>}
+                    {tag.teacher_id ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                        <span className="material-symbols-outlined text-[14px]">person</span>
+                        {tag.teacher_info?.user_info?.name || "未知教師"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                        <span className="material-symbols-outlined text-[14px]">public</span>
+                        全域標籤
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {new Date(tag.created_at).toLocaleString()}
@@ -199,17 +249,27 @@ export default function TagsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  所屬教師 ID (留空則為全域標籤)
+                  標籤類型 / 所屬教師
                 </label>
-                <input
-                  type="text"
+                <select
                   value={currentTag.teacher_id || ""}
                   onChange={(e) =>
                     setCurrentTag({ ...currentTag, teacher_id: e.target.value || null })
                   }
-                  placeholder="留空即為全域標籤"
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 outline-none"
-                />
+                >
+                  <option value="">🌐 全域標籤 (所有教師可見)</option>
+                  <optgroup label="指定給特定教師">
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        👤 {teacher.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  選擇「全域標籤」將讓所有教師都能在建立課程時看到此選項。
+                </p>
               </div>
             </div>
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
