@@ -482,19 +482,19 @@ export type Database = {
       tags: {
         Row: {
           id: string
-          teacher_id: string
+          teacher_id: string | null
           name: string
           created_at: string
         }
         Insert: {
           id?: string
-          teacher_id: string
+          teacher_id?: string | null
           name: string
           created_at?: string
         }
         Update: {
           id?: string
-          teacher_id?: string
+          teacher_id?: string | null
           name?: string
           created_at?: string
         }
