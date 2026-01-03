@@ -530,7 +530,15 @@ export default function TeacherProfileForm({
                         {edu.schoolName}
                       </h4>
                       <p className="text-sm text-text-sub">
-                        {edu.department} {edu.degree}
+                        {[
+                          edu.department,
+                          edu.degreeLevel || edu.degree,
+                          edu.studyYear != null
+                            ? `大學 ${edu.studyYear} 年級`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                       <p className="text-xs text-text-sub mt-1">
                         {edu.startYear} - {edu.endYear || "迄今"}

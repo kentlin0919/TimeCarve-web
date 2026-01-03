@@ -19,6 +19,15 @@ type PublicTeacherProfile = {
     description: string;
     icon: string;
   }[] | null;
+  educations: {
+    school_name: string | null;
+    department: string | null;
+    degree: string | null;
+    degree_level: string | null;
+    study_year: number | null;
+    start_year: number | null;
+    end_year: number | null;
+  }[] | null;
 };
 
 const portfolioItems = [
@@ -160,6 +169,26 @@ function TeachersContent() {
   const experienceYears = profile.experience_years ?? 0;
   const philosophyItems = profile.philosophy_items || [];
   const hasPhilosophyItems = philosophyItems.length > 0;
+  const educations = profile.educations || [];
+  const primaryEducation = educations[0];
+  const degreeLabel =
+    primaryEducation?.degree_level ||
+    primaryEducation?.degree ||
+    null;
+  const studyYearLabel =
+    primaryEducation?.study_year != null
+      ? `大學 ${primaryEducation.study_year} 年級`
+      : null;
+  const educationSummary = primaryEducation
+    ? [
+        primaryEducation.school_name,
+        primaryEducation.department,
+        degreeLabel,
+        studyYearLabel,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   return (
     <div className="relative flex min-h-screen w-full flex-col group/design-root bg-background-light dark:bg-background-dark text-[#111618] dark:text-[#f0f3f4] font-display overflow-x-hidden selection:bg-primary selection:text-white">
@@ -264,6 +293,11 @@ function TeachersContent() {
                   <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
                     {title}
                   </p>
+                  {educationSummary && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      {educationSummary}
+                    </p>
+                  )}
                 </div>
                 <div className="h-px w-full bg-gray-100 dark:bg-gray-800"></div>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">

@@ -184,11 +184,20 @@ export default function AdminSidebar({
             <span className="font-medium text-sm">財務報表</span>
           </Link>
           <Link
-            href="#"
+            href="/admin/settings"
             onClick={() => onClose()}
-            className="flex items-center space-x-3 px-3 py-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-lg group transition-colors"
+            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
+              isActive("/admin/settings")
+                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
+                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            }`}
           >
-            <span className="material-symbols-outlined text-xl group-hover:text-sky-500 transition-colors">
+            <span
+              className={`material-symbols-outlined text-xl ${
+                !isActive("/admin/settings") &&
+                "group-hover:text-sky-500 transition-colors"
+              }`}
+            >
               settings
             </span>
             <span className="font-medium text-sm">系統設定</span>

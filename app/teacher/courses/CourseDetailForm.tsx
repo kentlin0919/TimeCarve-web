@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Course, CourseSection } from "@/lib/domain/course/entity";
 import { useModal } from "@/app/components/providers/ModalContext";
 import { supabase } from "@/lib/supabase"; // Import supabase
+import Select from "@/app/components/ui/Select"; // Import Select
 
 interface CourseDetailFormProps {
   initialData: Partial<Course>;
@@ -283,36 +284,28 @@ export default function CourseDetailForm({
                     className="block w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none sm:text-sm py-2.5 px-3 font-bold text-lg placeholder-slate-400"
                   />
                 </div>
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
-                    課程類型 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={form.courseType || ""}
-                    onChange={(e) => handleChange("courseType", e.target.value)}
-                    className="block w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none sm:text-sm py-2.5 px-3 font-bold text-lg"
-                  >
-                    <option value="" disabled>
-                      請選擇類型
-                    </option>
-                    {courseTypes.map((type) => (
-                      <option key={type.name} value={type.name}>
-                        {type.label_zh}
-                      </option>
-                    ))}
-                    {courseTypes.length === 0 && (
-                      // Fallback if DB is empty or fetch failed
-                      <>
-                        <option value="1-on-1">一對一教學</option>
-                        <option value="group">團體課程</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
-                    單價格設定 (TWD) <span className="text-red-500">*</span>
-                  </label>
+                                <div className="col-span-1">
+                                  <Select
+                                    label="課程類型"
+                                    value={form.courseType || ""}
+                                    onChange={(e) => handleChange("courseType", e.target.value)}
+                                    options={courseTypes.map(t => ({ value: t.name, label: t.label_zh }))}
+                                    className="font-bold text-lg"
+                                    required
+                                  >
+                                    {courseTypes.length === 0 && (
+                                       // Fallback if DB is empty or fetch failed
+                                       <>
+                                         <option value="1-on-1">一對一教學</option>
+                                         <option value="group">團體課程</option>
+                                       </>
+                                    )}
+                                  </Select>
+                                </div>
+                                <div className="col-span-1">
+                                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
+                                    單價格設定 (TWD) <span className="text-red-500">*</span>
+                                  </label>
                   <div className="relative flex items-center w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all overflow-hidden">
                     <span className="pl-4 text-text-sub text-sm font-medium">
                       NT$
@@ -364,36 +357,6 @@ export default function CourseDetailForm({
                 </h3>
               </div>
               <div className="p-6">
-                {/* Global Tags Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
-                    選擇現有標籤
-                  </label>
-                  {globalTags.length === 0 && (
-                    <p className="text-sm text-text-sub italic">
-                      目前沒有全域標籤可供選擇。
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    {globalTags.map((tag) => (
-                      <button
-                        type="button"
-                        key={tag.id}
-                        onClick={() => handleAddTag(null, tag.name)} // Pass tag name directly
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                          ${
-                            form.tags?.some((t) => t.text === tag.name)
-                              ? "bg-primary text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-primary/20 hover:text-primary dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-primary/50"
-                          } transition-colors`}
-                        disabled={form.tags?.some((t) => t.text === tag.name)}
-                      >
-                        {tag.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Manual Tag Input */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import Select from "@/app/components/ui/Select";
 
 interface Tag {
   id: string;
@@ -248,25 +249,23 @@ export default function TagsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  標籤類型 / 所屬教師
-                </label>
-                <select
+                <Select
+                  label="標籤類型 / 所屬教師"
                   value={currentTag.teacher_id || ""}
                   onChange={(e) =>
                     setCurrentTag({ ...currentTag, teacher_id: e.target.value || null })
                   }
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 outline-none"
-                >
-                  <option value="">🌐 全域標籤 (所有教師可見)</option>
-                  <optgroup label="指定給特定教師">
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        👤 {teacher.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
+                  options={[
+                    { value: "", label: "🌐 全域標籤 (所有教師可見)" },
+                    {
+                      label: "指定給特定教師",
+                      options: teachers.map((t) => ({
+                        value: t.id,
+                        label: `👤 ${t.name}`,
+                      })),
+                    },
+                  ]}
+                />
                 <p className="text-xs text-gray-500 mt-1">
                   選擇「全域標籤」將讓所有教師都能在建立課程時看到此選項。
                 </p>

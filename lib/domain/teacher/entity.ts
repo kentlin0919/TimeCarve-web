@@ -4,7 +4,9 @@ export interface TeacherEducation {
   schoolName: string; // school_id -> schools.name (joined)
   schoolId: string;
   degree: string | null;
+  degreeLevel?: string | null;
   department: string | null;
+  studyYear?: number | null;
   startYear: number | null;
   endYear: number | null;
   isVerified: boolean;

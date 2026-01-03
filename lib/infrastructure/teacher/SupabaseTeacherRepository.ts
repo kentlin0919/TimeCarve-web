@@ -51,7 +51,9 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         schoolName: e.schools?.name || "Unknown School",
         schoolId: e.school_id,
         degree: e.degree,
+        degreeLevel: e.degree_level,
         department: e.department,
+        studyYear: e.study_year,
         startYear: e.start_year,
         endYear: e.end_year,
         isVerified: e.is_verified,
@@ -72,7 +74,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         experienceYears: teacherData.experience_years,
         basePrice: teacherData.base_price,
         specialties: teacherData.specialties || [],
-        philosophyItems: teacherData.philosophy_items || [],
+        philosophyItems: (teacherData.philosophy_items as any) || [],
         isPublic: teacherData.is_public || false,
         
         googleCalendarEnabled: teacherData.google_calendar_enabled || false,

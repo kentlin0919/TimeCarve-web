@@ -1,3 +1,5 @@
+import Footer from "@/app/components/Footer";
+
 export default function PublicLayout({
   children,
 }: {
@@ -5,7 +7,8 @@ export default function PublicLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      {children}
+      <div className="flex-1">{children}</div>
+      <Footer />
     </div>
   );
 }

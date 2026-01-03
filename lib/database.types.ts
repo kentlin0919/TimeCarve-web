@@ -392,6 +392,7 @@ export type Database = {
           google_calendar_enabled: boolean | null
           line_notify_enabled: boolean | null
           line_notify_token: string | null
+          philosophy_items: Json | null
         }
         Insert: {
           base_price?: number | null
@@ -409,6 +410,7 @@ export type Database = {
           google_calendar_enabled?: boolean | null
           line_notify_enabled?: boolean | null
           line_notify_token?: string | null
+          philosophy_items?: Json | null
         }
         Update: {
           base_price?: number | null
@@ -426,6 +428,7 @@ export type Database = {
           google_calendar_enabled?: boolean | null
           line_notify_enabled?: boolean | null
           line_notify_token?: string | null
+          philosophy_items?: Json | null
         }
         Relationships: [
           {
@@ -476,6 +479,30 @@ export type Database = {
           updated_at?: string
           phone?: string | null
           avatar_url?: string | null
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          key: string
+          value: string | null
+          label: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value?: string | null
+          label?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string | null
+          label?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

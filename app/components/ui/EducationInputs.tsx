@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useSchools } from "@/app/hooks/useSchools";
 import SchoolCombobox from "@/app/components/ui/SchoolCombobox";
+import Select from "@/app/components/ui/Select";
 
 interface EducationInputsProps {
   school: string;
@@ -29,6 +32,29 @@ export default function EducationInputs({
   labels = {},
 }: EducationInputsProps) {
   const schools = useSchools();
+  const [statusOptions, setStatusOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      const { data, error } = await supabase
+        .from("education_statuses")
+        .select("status_key, label_zh")
+        .order("id", { ascending: true }); // Assuming ID order is preferred, or use another field
+
+      if (data) {
+        setStatusOptions(
+          data.map((item) => ({
+            value: item.status_key,
+            label: item.label_zh,
+          }))
+        );
+      } else if (error) {
+        console.error("Error fetching education statuses:", error);
+      }
+    };
+
+    fetchStatuses();
+  }, []);
 
   const defaultLabels = {
     school: "畢業/就讀學校",
@@ -54,25 +80,14 @@ export default function EducationInputs({
       </div>
 
       {/* Status Field */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
-          {finalLabels.status}
-        </label>
-        <div className="relative">
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all appearance-none"
-          >
-            <option value="studying">就學中</option>
-            <option value="graduated">已畢業</option>
-            <option value="suspended">休學中</option>
-            <option value="dropped_out">肄業</option>
-          </select>
-          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">
-            arrow_drop_down
-          </span>
-        </div>
+      <div>
+        <Select
+          label={finalLabels.status}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          options={statusOptions}
+          icon="history_edu"
+        />
       </div>
 
       {/* Department Field */}
