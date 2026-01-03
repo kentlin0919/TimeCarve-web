@@ -14,20 +14,24 @@ type PublicTeacherProfile = {
   experience_years: number | null;
   base_price: number | null;
   specialties: string[] | null;
-  philosophy_items: {
-    title: string;
-    description: string;
-    icon: string;
-  }[] | null;
-  educations: {
-    school_name: string | null;
-    department: string | null;
-    degree: string | null;
-    degree_level: string | null;
-    study_year: number | null;
-    start_year: number | null;
-    end_year: number | null;
-  }[] | null;
+  philosophy_items:
+    | {
+        title: string;
+        description: string;
+        icon: string;
+      }[]
+    | null;
+  educations:
+    | {
+        school_name: string | null;
+        department: string | null;
+        degree: string | null;
+        degree_level: string | null;
+        study_year: number | null;
+        start_year: number | null;
+        end_year: number | null;
+      }[]
+    | null;
 };
 
 const portfolioItems = [
@@ -172,9 +176,7 @@ function TeachersContent() {
   const educations = profile.educations || [];
   const primaryEducation = educations[0];
   const degreeLabel =
-    primaryEducation?.degree_level ||
-    primaryEducation?.degree ||
-    null;
+    primaryEducation?.degree_level || primaryEducation?.degree || null;
   const studyYearLabel =
     primaryEducation?.study_year != null
       ? `大學 ${primaryEducation.study_year} 年級`
@@ -517,93 +519,6 @@ function TeachersContent() {
               ))}
             </div>
           </section>
-
-          <footer className="py-16 border-t border-gray-100 dark:border-gray-800 w-full">
-            <div className="flex flex-col md:flex-row justify-between gap-12">
-              <div className="flex flex-col gap-6 max-w-sm">
-                <div className="flex items-center gap-2 text-[#111618] dark:text-white">
-                  <span className="material-symbols-outlined text-primary text-3xl">
-                    dentistry
-                  </span>
-                  <h2 className="text-xl font-bold">TimeCarve 刻時</h2>
-                </div>
-                <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                  致力於提升台灣牙體技術美學，透過系統化的教學，讓每一位技師都能成為牙齒的藝術家。
-                </p>
-                <div className="flex gap-4">
-                  <a
-                    className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1"
-                    href="#"
-                  >
-                    <span className="material-symbols-outlined">share</span>
-                  </a>
-                  <a
-                    className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1"
-                    href="#"
-                  >
-                    <span className="material-symbols-outlined">tag</span>
-                  </a>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-10 sm:gap-20">
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-widest">
-                    快速連結
-                  </h3>
-                  <a
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#"
-                  >
-                    關於我們
-                  </a>
-                  <a
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#"
-                  >
-                    師資介紹
-                  </a>
-                  <a
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#portfolio"
-                  >
-                    精選作品
-                  </a>
-                  <a
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#"
-                  >
-                    聯絡我們
-                  </a>
-                </div>
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-widest">
-                    聯絡方式
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-base">
-                      mail
-                    </span>
-                    contact@timecarve.com
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-base">
-                      call
-                    </span>
-                    02-1234-5678
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-base">
-                      location_on
-                    </span>
-                    台北市信義區
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-16 pt-8 border-t border-gray-100 dark:border-gray-800 text-center text-xs text-gray-400">
-              © 2024 TimeCarve. All rights reserved.
-            </div>
-          </footer>
         </div>
       </main>
     </div>

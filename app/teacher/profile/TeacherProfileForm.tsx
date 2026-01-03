@@ -370,38 +370,6 @@ export default function TeacherProfileForm({
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
-                  專長標籤 (Enter 新增)
-                </label>
-                <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800 min-h-[50px]">
-                  {profile.specialties.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-2.5 py-1 rounded bg-primary/10 text-primary text-sm"
-                    >
-                      {tag}
-                      <button
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    value={newSpecialty}
-                    onChange={(e) => setNewSpecialty(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder={
-                      profile.specialties.length === 0 ? "輸入專長..." : ""
-                    }
-                    className="bg-transparent outline-none flex-1 min-w-[100px] text-sm"
-                  />
-                </div>
-              </div>
             </div>
           </div>
 

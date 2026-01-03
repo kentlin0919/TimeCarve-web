@@ -325,37 +325,6 @@ export default function TermsPage() {
           </section>
         </article>
       </main>
-
-      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-12 px-6 mt-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-slate-500 dark:text-slate-400">
-          <div className="mb-4 md:mb-0 flex items-center">
-            <span className="font-bold text-slate-700 dark:text-slate-300 mr-2">
-              TimeCarve 刻時
-            </span>
-            <span>© 2025 版權所有</span>
-          </div>
-          <div className="flex space-x-8">
-            <Link
-              href="/legal/privacy"
-              className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
-            >
-              隱私權政策
-            </Link>
-            <a
-              href="#"
-              className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
-            >
-              Cookie 政策
-            </a>
-            <a
-              href="mailto:support@timecarve.com"
-              className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
-            >
-              聯繫我們
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

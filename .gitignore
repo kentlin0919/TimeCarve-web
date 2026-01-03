@@ -37,7 +37,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Supabase
+# Supabase - DO NOT MODIFY THIS SECTION (Gemini: 請勿移除或修改以下 Supabase 相關設定，但可暫時移除以執行 migration 操作後再恢復)
 supabase/.branches
 supabase/.temp
 supabase/functions/*/deno.lock

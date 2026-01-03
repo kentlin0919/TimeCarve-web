@@ -357,6 +357,36 @@ export default function CourseDetailForm({
                 </h3>
               </div>
               <div className="p-6">
+                {/* Global Tags Selection */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
+                    選擇現有標籤
+                  </label>
+                  {globalTags.length === 0 && (
+                    <p className="text-sm text-text-sub italic">
+                      目前沒有全域標籤可供選擇。
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {globalTags.map((tag) => (
+                      <button
+                        type="button"
+                        key={tag.id}
+                        onClick={() => handleAddTag(null, tag.name)} // Pass tag name directly
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                          ${
+                            form.tags?.some((t) => t.text === tag.name)
+                              ? "bg-primary text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-primary/20 hover:text-primary dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-primary/50"
+                          } transition-colors`}
+                        disabled={form.tags?.some((t) => t.text === tag.name)}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Manual Tag Input */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
