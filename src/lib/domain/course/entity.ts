@@ -26,6 +26,7 @@ export interface Course {
   location?: string;
   isActive: boolean;
   sections?: CourseSection[]; // JSONB
+  imageUrl?: string | null;
   
   // UI Fields (Optional or derived)
   icon?: string;

@@ -30,6 +30,7 @@ export default function CourseDetailForm({
     sections: [],
     status: "draft",
     tags: [],
+    imageUrl: null,
     ...initialData,
   });
 
@@ -41,12 +42,20 @@ export default function CourseDetailForm({
   const [globalTags, setGlobalTags] = useState<{ id: string; name: string }[]>(
     []
   );
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // If initialData changes significantly (e.g. switching courses), reset form
     // But typically this component is mounted afresh or key changes
     setForm((prev) => ({ ...prev, ...initialData }));
   }, [initialData]);
+
+  useEffect(() => {
+    if (form.imageUrl) {
+      setImagePreviewUrl(form.imageUrl);
+    }
+  }, [form.imageUrl]);
 
   // Fetch course types
 
@@ -163,6 +172,72 @@ export default function CourseDetailForm({
       return;
     }
     onSave(form);
+  };
+
+  const handleCourseImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showModal({
+        title: "格式不支援",
+        description: "請上傳圖片檔案 (JPG/PNG/WebP)。",
+        confirmText: "確定",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showModal({
+        title: "檔案過大",
+        description: "圖片大小請勿超過 10MB。",
+        confirmText: "確定",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split(".").pop() || "png";
+      const fileName = `${form.id || "draft"}-${Date.now()}.${fileExt}`;
+      const filePath = `course-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("course-images")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("course-images").getPublicUrl(filePath);
+
+      if (!publicUrl) {
+        throw new Error("取得圖片連結失敗");
+      }
+
+      setForm((prev) => ({ ...prev, imageUrl: publicUrl }));
+      setImagePreviewUrl(publicUrl);
+    } catch (err: any) {
+      console.error("Error uploading course image:", err);
+      showModal({
+        title: "上傳失敗",
+        description: err?.message || "圖片上傳失敗，請稍後再試。",
+        confirmText: "確定",
+      });
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveCourseImage = () => {
+    setForm((prev) => ({ ...prev, imageUrl: null }));
+    setImagePreviewUrl(null);
   };
 
   // Sections Logic
@@ -662,7 +737,7 @@ export default function CourseDetailForm({
 
             {/* 4. Media & Status */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              {/* Media Upload (Placeholder) */}
+              {/* Media Upload */}
               <div className="lg:col-span-2 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-card overflow-hidden">
                 <div className="px-6 py-4 border-b border-border-light dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">
@@ -673,20 +748,65 @@ export default function CourseDetailForm({
                   </h3>
                 </div>
                 <div className="p-6">
-                  <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <span className="material-symbols-outlined text-4xl text-text-sub group-hover:text-primary mb-3 transition-colors">
-                        cloud_upload
-                      </span>
-                      <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold text-primary">
-                          點擊上傳
-                        </span>{" "}
-                        或將檔案拖曳至此
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        支援 JPG, PNG, PDF (Max 10MB)
-                      </p>
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    <div className="flex-1">
+                      <label className="flex flex-col items-center justify-center w-full h-52 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCourseImageUpload}
+                          className="hidden"
+                          disabled={uploadingImage}
+                        />
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                          <span className="material-symbols-outlined text-4xl text-text-sub group-hover:text-primary mb-3 transition-colors">
+                            cloud_upload
+                          </span>
+                          <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+                            <span className="font-semibold text-primary">
+                              點擊上傳
+                            </span>{" "}
+                            或將檔案拖曳至此
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            支援 JPG / PNG / WebP (Max 10MB)
+                          </p>
+                          {uploadingImage && (
+                            <p className="text-xs text-primary mt-2">
+                              上傳中...
+                            </p>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                    <div className="w-full lg:w-64">
+                      <div className="w-full aspect-video rounded-xl border border-border-light dark:border-border-dark bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center">
+                        {imagePreviewUrl ? (
+                          <img
+                            src={imagePreviewUrl}
+                            alt="課程圖片預覽"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-xs text-text-sub text-center px-4">
+                            尚未上傳圖片
+                          </div>
+                        )}
+                      </div>
+                      {imagePreviewUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveCourseImage}
+                          className="mt-3 w-full px-3 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          移除圖片
+                        </button>
+                      )}
+                      {form.imageUrl && (
+                        <p className="text-[11px] text-text-sub mt-2 break-all">
+                          {form.imageUrl}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

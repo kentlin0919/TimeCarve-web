@@ -41,6 +41,7 @@ export class SupabaseCourseRepository implements CourseRepository {
         course_type: course.courseType,
         duration_minutes: course.durationMinutes,
         price: course.price,
+        image_url: course.imageUrl,
         location: course.location,
         is_active: course.isActive,
         sections: course.sections as any, // Cast to any for JSONB
@@ -68,6 +69,7 @@ export class SupabaseCourseRepository implements CourseRepository {
     if (course.courseType !== undefined) updateData.course_type = course.courseType;
     if (course.durationMinutes !== undefined) updateData.duration_minutes = course.durationMinutes;
     if (course.price !== undefined) updateData.price = course.price;
+    if (course.imageUrl !== undefined) updateData.image_url = course.imageUrl;
     if (course.location !== undefined) updateData.location = course.location;
     if (course.isActive !== undefined) updateData.is_active = course.isActive;
     if (course.sections !== undefined) updateData.sections = course.sections;
@@ -179,6 +181,7 @@ export class SupabaseCourseRepository implements CourseRepository {
       courseType: data.course_type,
       durationMinutes: data.duration_minutes,
       price: data.price,
+      imageUrl: data.image_url,
       location: data.location,
       isActive: data.is_active,
       status: data.is_active ? "active" : "draft",

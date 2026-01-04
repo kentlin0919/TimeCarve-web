@@ -34,70 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      bookings: {
-        Row: {
-          booking_date: string
-          course_id: string
-          created_at: string
-          end_time: string
-          id: string
-          notes: string | null
-          start_time: string
-          status: string
-          student_id: string
-          teacher_id: string
-          updated_at: string
-        }
-        Insert: {
-          booking_date: string
-          course_id: string
-          created_at?: string
-          end_time: string
-          id?: string
-          notes?: string | null
-          start_time: string
-          status?: string
-          student_id: string
-          teacher_id: string
-          updated_at?: string
-        }
-        Update: {
-          booking_date?: string
-          course_id?: string
-          created_at?: string
-          end_time?: string
-          id?: string
-          notes?: string | null
-          start_time?: string
-          status?: string
-          student_id?: string
-          teacher_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "user_info"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_teacher_id_fkey"
-            columns: ["teacher_id"]
-            isOneToOne: false
-            referencedRelation: "teacher_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      },
       class_type: {
         Row: {
           class_type_id: number
@@ -725,6 +661,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_is_student_bound: {
+        Args: { target_teacher_code: string }
+        Returns: boolean
+      }
+      check_is_teacher_owner: {
+        Args: { target_teacher_code: string }
+        Returns: boolean
+      }
       check_teacher_code_exists: { Args: { code: string }; Returns: boolean }
       ensure_school: {
         Args: { p_code?: string; p_name: string }
@@ -742,20 +686,9 @@ export type Database = {
         }
         Returns: string
       }
-      get_public_teacher_profile: {
-        Args: { code: string }
-        Returns: {
-          avatar_url: string
-          base_price: number
-          bio: string
-          experience_years: number
-          name: string
-          specialties: string[]
-          teacher_code: string
-          title: string
-        }[]
-      }
+      get_public_teacher_profile: { Args: { code: string }; Returns: Json }
       has_role: { Args: { target_role_name: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

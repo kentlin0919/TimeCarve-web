@@ -21,6 +21,9 @@ export default function TeacherCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [editForm, setEditForm] = useState<Partial<Course>>({});
   const [activeTab, setActiveTab] = useState<"info" | "content">("info"); // Tab state
+  const [showAllFields, setShowAllFields] = useState(false);
+  const [expandedContent, setExpandedContent] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   // Load courses on mount
   useEffect(() => {
@@ -52,6 +55,8 @@ export default function TeacherCoursesPage() {
   useEffect(() => {
     setIsEditing(false);
     setActiveTab("info");
+    setExpandedContent(false);
+    setExpandedSections({});
   }, [selectedCourseId]);
 
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
@@ -87,6 +92,7 @@ export default function TeacherCoursesPage() {
           courseType: formData.courseType || "1-on-1",
           durationMinutes: formData.durationMinutes || 60,
           price: formData.price || 0,
+          imageUrl: formData.imageUrl || null,
           isActive: formData.isActive || false, // Default from form shouldn't override unless set
           status: formData.status || "draft",
           sections: formData.sections || [],
@@ -163,6 +169,29 @@ export default function TeacherCoursesPage() {
       (course.desc || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+  };
+
+  const renderField = (
+    label: string,
+    value: React.ReactNode,
+    shouldShow: boolean
+  ) => {
+    if (!showAllFields && !shouldShow) return null;
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-semibold text-text-sub">{label}</span>
+        <span className="text-sm text-slate-800 dark:text-white break-all">
+          {shouldShow ? value : "—"}
+        </span>
+      </div>
+    );
+  };
+
   if (isEditing || isCreating) {
     return (
       <CourseDetailForm
@@ -236,6 +265,7 @@ export default function TeacherCoursesPage() {
                   {filteredCourses.map((course) => {
                     const isSelected = selectedCourseId === course.id;
                     const isActive = course.status === "active";
+                    const updatedAt = formatDateTime(course.updatedAt);
 
                     return (
                       <div
@@ -284,10 +314,28 @@ export default function TeacherCoursesPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-text-sub truncate mt-0.5">
-                              {course.priceUnit || "小時"} • $
-                              {course.price?.toLocaleString() || 0}
-                            </p>
+                            <div className="text-xs text-text-sub mt-0.5 space-y-1">
+                              <p className="truncate">
+                                {course.courseType || "未設定類型"} • {course.priceUnit || "小時"} • $
+                                {course.price?.toLocaleString() || 0}
+                              </p>
+                              <p className="truncate">
+                                時長 {Math.ceil((course.durationMinutes || 0) / 60)} 小時
+                                {updatedAt ? ` • 更新 ${updatedAt}` : ""}
+                              </p>
+                            </div>
+                            {(course.tags || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {course.tags?.slice(0, 3).map((tag, idx) => (
+                                  <span
+                                    key={`${course.id}-tag-${idx}`}
+                                    className="px-2 py-0.5 text-[11px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                  >
+                                    {tag.text}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -347,38 +395,129 @@ export default function TeacherCoursesPage() {
                         <p className="text-text-sub mt-4 text-sm leading-relaxed max-w-2xl">
                           {selectedCourse.desc}
                         </p>
+                        <div className="flex flex-wrap items-center gap-3 mt-4">
+                          <button
+                            onClick={() => setShowAllFields((prev) => !prev)}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-full border border-border-light dark:border-border-dark text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            {showAllFields ? "僅顯示有值欄位" : "顯示全部欄位"}
+                          </button>
+                          {selectedCourse.content && (
+                            <button
+                              onClick={() => setExpandedContent((prev) => !prev)}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-full border border-border-light dark:border-border-dark text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              {expandedContent ? "收合內容" : "展開內容"}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-8 bg-surface-light dark:bg-surface-dark">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                       <div className="space-y-6">
                         <h3 className="font-bold text-slate-800 dark:text-white border-b pb-2">
-                          課程細節
+                          基本資料
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
-                            <p className="text-xs text-text-sub mb-1">
-                              價格設定
-                            </p>
-                            <p className="text-lg font-bold text-slate-900 dark:text-white">
-                              NT$ {(selectedCourse.price || 0).toLocaleString()}
-                            </p>
-                            <p className="text-xs text-text-sub mt-0.5">
-                              /{selectedCourse.priceUnit || "小時"}
-                            </p>
-                          </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {renderField("課程 ID", selectedCourse.id, Boolean(selectedCourse.id))}
+                          {renderField(
+                            "課程名稱",
+                            selectedCourse.title,
+                            Boolean(selectedCourse.title)
+                          )}
+                          {renderField(
+                            "課程類型",
+                            selectedCourse.courseType || "未設定",
+                            Boolean(selectedCourse.courseType)
+                          )}
+                          {renderField(
+                            "狀態",
+                            selectedCourse.status || "draft",
+                            Boolean(selectedCourse.status)
+                          )}
+                          {renderField(
+                            "是否啟用",
+                            selectedCourse.isActive ? "啟用" : "停用",
+                            true
+                          )}
+                          {renderField(
+                            "上課地點",
+                            selectedCourse.location || "未設定",
+                            Boolean(selectedCourse.location)
+                          )}
+                          {renderField(
+                            "Icon",
+                            selectedCourse.icon || "school",
+                            Boolean(selectedCourse.icon)
+                          )}
+                          {renderField(
+                            "Icon Color",
+                            selectedCourse.iconColor || "blue",
+                            Boolean(selectedCourse.iconColor)
+                          )}
                         </div>
-                        {/* Duration Card Removed */}
-                        <div>
-                          <h4 className="text-xs font-bold text-text-sub uppercase mb-2">
-                            標籤
-                          </h4>
+
+                        <h3 className="font-bold text-slate-800 dark:text-white border-b pb-2">
+                          課程費用與時間
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {renderField(
+                            "單價",
+                            `NT$ ${(selectedCourse.price || 0).toLocaleString()}`,
+                            selectedCourse.price !== undefined && selectedCourse.price !== null
+                          )}
+                          {renderField(
+                            "計價單位",
+                            selectedCourse.priceUnit || "小時",
+                            Boolean(selectedCourse.priceUnit)
+                          )}
+                          {renderField(
+                            "課程時長",
+                            `${selectedCourse.durationMinutes || 0} 分鐘`,
+                            Boolean(selectedCourse.durationMinutes)
+                          )}
+                          {renderField(
+                            "課程圖片",
+                            selectedCourse.imageUrl || "未設定",
+                            Boolean(selectedCourse.imageUrl)
+                          )}
+                          {renderField(
+                            "總時數",
+                            `${Math.ceil((selectedCourse.durationMinutes || 0) / 60)} 小時`,
+                            Boolean(selectedCourse.durationMinutes)
+                          )}
+                        </div>
+
+                        <h3 className="font-bold text-slate-800 dark:text-white border-b pb-2">
+                          課程內容
+                        </h3>
+                        <div className="space-y-3">
+                          {renderField(
+                            "簡介",
+                            selectedCourse.desc || "—",
+                            Boolean(selectedCourse.desc)
+                          )}
+                          {selectedCourse.content && (expandedContent || showAllFields) && (
+                            <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 p-4 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
+                              {selectedCourse.content}
+                            </div>
+                          )}
+                          {showAllFields && !selectedCourse.content && (
+                            <div className="text-xs text-text-sub">尚未提供完整內容</div>
+                          )}
+                        </div>
+
+                        <h3 className="font-bold text-slate-800 dark:text-white border-b pb-2">
+                          標籤
+                        </h3>
+                        {(selectedCourse.tags || []).length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {(selectedCourse.tags || []).map((tag, idx) => (
                               <span
-                                key={idx}
+                                key={`${selectedCourse.id}-tag-${idx}`}
                                 className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border border-border-light dark:border-border-dark"
                               >
                                 <span className="material-symbols-outlined text-[14px]">
@@ -388,6 +527,26 @@ export default function TeacherCoursesPage() {
                               </span>
                             ))}
                           </div>
+                        ) : (
+                          showAllFields && (
+                            <p className="text-sm text-text-sub">尚未設定標籤</p>
+                          )
+                        )}
+
+                        <h3 className="font-bold text-slate-800 dark:text-white border-b pb-2">
+                          系統時間
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {renderField(
+                            "建立時間",
+                            formatDateTime(selectedCourse.createdAt),
+                            Boolean(selectedCourse.createdAt)
+                          )}
+                          {renderField(
+                            "更新時間",
+                            formatDateTime(selectedCourse.updatedAt),
+                            Boolean(selectedCourse.updatedAt)
+                          )}
                         </div>
                       </div>
 
@@ -405,21 +564,80 @@ export default function TeacherCoursesPage() {
                               尚未建立任何章節
                             </p>
                           ) : (
-                            selectedCourse.sections.map((section, idx) => (
-                              <div
-                                key={section.id}
-                                className="p-4 rounded-xl border border-border-light dark:border-border-dark hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                              >
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                                    {section.title}
-                                  </h4>
+                            selectedCourse.sections.map((section, idx) => {
+                              const isExpanded = expandedSections[section.id];
+                              const hasAssets = Boolean(section.assets?.length);
+                              return (
+                                <div
+                                  key={section.id}
+                                  className="p-4 rounded-xl border border-border-light dark:border-border-dark hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                      <h4 className="font-bold text-slate-800 dark:text-white text-sm">
+                                        {section.title || `未命名章節 ${idx + 1}`}
+                                      </h4>
+                                      <p className="text-xs text-text-sub mt-1">
+                                        {section.duration ? `${section.duration} 分鐘` : ""}
+                                        {section.isFree ? " • 免費" : ""}
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        setExpandedSections((prev) => ({
+                                          ...prev,
+                                          [section.id]: !prev[section.id],
+                                        }))
+                                      }
+                                      className="text-xs font-semibold text-primary"
+                                    >
+                                      {isExpanded ? "收合" : "展開"}
+                                    </button>
+                                  </div>
+                                  {(isExpanded || showAllFields) && (
+                                    <div className="mt-3 text-xs text-text-sub space-y-2">
+                                      {section.content && (
+                                        <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-200">
+                                          {section.content}
+                                        </p>
+                                      )}
+                                      {hasAssets && (
+                                        <div className="space-y-2">
+                                          <p className="text-[11px] font-semibold uppercase">
+                                            Assets
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {section.assets?.map((asset, assetIdx) => (
+                                              <div
+                                                key={`${section.id}-asset-${assetIdx}`}
+                                                className="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300"
+                                              >
+                                                <span>
+                                                  {asset.type} • {asset.title}
+                                                </span>
+                                                <a
+                                                  className="text-primary underline"
+                                                  href={asset.url}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                >
+                                                  開啟
+                                                </a>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {showAllFields && !section.content && !hasAssets && (
+                                        <p className="text-xs text-text-sub">
+                                          尚未提供章節內容
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <p className="text-xs text-text-sub line-clamp-2">
-                                  {section.content || "尚無內容描述..."}
-                                </p>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
 

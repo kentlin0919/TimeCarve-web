@@ -150,7 +150,7 @@ export default function StudentCourseDetailPage() {
               <div className="relative rounded-3xl overflow-hidden aspect-video shadow-lg mb-8 group">
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url("${heroImage}")` }}
+                  style={{ backgroundImage: `url("${course.imageUrl || heroImage}")` }}
                 ></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <button className="absolute inset-0 flex items-center justify-center group/play">
@@ -209,6 +209,7 @@ export default function StudentCourseDetailPage() {
                     const isLast = index === sections.length - 1;
                     const order = String(index + 1).padStart(2, "0");
                     const sectionKey = section.id || `${course.id}-section-${index}`;
+                    const hasKeyPoints = Boolean(section.keyPoints?.length);
 
                     return (
                       <div
@@ -238,8 +239,34 @@ export default function StudentCourseDetailPage() {
                               </span>
                             )}
                           </div>
+                          {section.learningObjective && (
+                            <div className="mt-4">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                                學習目標
+                              </span>
+                              <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
+                                {section.learningObjective}
+                              </p>
+                            </div>
+                          )}
+                          {hasKeyPoints && (
+                            <div className="border-t border-slate-100 dark:border-slate-700/50 pt-4 mt-4">
+                              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">單元重點</p>
+                              <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4">
+                                {section.keyPoints?.map((point, pointIndex) => (
+                                  <li
+                                    key={`${sectionKey}-point-${pointIndex}`}
+                                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+                                  >
+                                    <div className="size-1.5 rounded-full bg-slate-400"></div>
+                                    {point}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                           {section.content && (
-                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-3">
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-4">
                               {section.content}
                             </p>
                           )}
@@ -295,7 +322,9 @@ export default function StudentCourseDetailPage() {
                   </button>
                 </div>
                 <p className="text-center text-xs text-slate-400 mt-2">
-                  {course.price ? `每小時 NT$ ${course.price.toLocaleString()}` : "課程費用將於確認後提供"}
+                  {course.price
+                    ? `包含材料費與講義 • 每小時 NT$ ${course.price.toLocaleString()}`
+                    : "課程費用將於確認後提供"}
                 </p>
               </div>
               <button
