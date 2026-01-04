@@ -142,13 +142,15 @@ export default function AdminUsersPage() {
     ];
   }, [identities, selectedUser?.identity_id]);
 
+  const roleId = formUser.identity_id ?? selectedUser?.identity_id ?? null;
+
   const showStudentSection = useMemo(() => {
-    if (editing) return true;
+    if (editing && roleId === 3) return true;
     return Boolean(formStudent.student_code || formStudent.teacher_code);
-  }, [editing, formStudent.student_code, formStudent.teacher_code]);
+  }, [editing, roleId, formStudent.student_code, formStudent.teacher_code]);
 
   const showTeacherSection = useMemo(() => {
-    if (editing) return true;
+    if (editing && roleId === 2) return true;
     return Boolean(
       formTeacher.teacher_code ||
         formTeacher.title ||
@@ -159,6 +161,7 @@ export default function AdminUsersPage() {
     );
   }, [
     editing,
+    roleId,
     formTeacher.teacher_code,
     formTeacher.title,
     formTeacher.experience_years,
@@ -173,6 +176,10 @@ export default function AdminUsersPage() {
     setError(null);
 
     try {
+      if (formUser.identity_id === 3 && !formStudent.teacher_code) {
+        throw new Error("學生身分需填寫綁定教師代碼。");
+      }
+
       const emailChanged =
         formUser.email && formUser.email !== selectedUser.email;
 
@@ -208,7 +215,19 @@ export default function AdminUsersPage() {
 
       if (userError) throw userError;
 
-      if (selectedUser.student_info) {
+      if (formUser.identity_id === 3) {
+        if (!selectedUser.student_info) {
+          const { error: studentCreateError } = await supabase
+            .from("student_info")
+            .insert({
+              id: selectedUser.id,
+              student_code: formStudent.student_code || null,
+              teacher_code: formStudent.teacher_code || "",
+            });
+
+          if (studentCreateError) throw studentCreateError;
+        }
+
         const { error: studentError } = await supabase
           .from("student_info")
           .update({
@@ -220,7 +239,32 @@ export default function AdminUsersPage() {
         if (studentError) throw studentError;
       }
 
-      if (selectedUser.teacher_info) {
+      if (formUser.identity_id === 2) {
+        if (!selectedUser.teacher_info) {
+          let teacherCode = formTeacher.teacher_code;
+          if (!teacherCode) {
+            const { data: generatedCode, error: codeError } = await supabase.rpc(
+              "generate_teacher_code"
+            );
+            if (codeError) throw codeError;
+            teacherCode = generatedCode as string;
+          }
+
+          const { error: teacherCreateError } = await supabase
+            .from("teacher_info")
+            .insert({
+              id: selectedUser.id,
+              teacher_code: teacherCode,
+              title: formTeacher.title || null,
+              bio: formTeacher.bio || null,
+              experience_years: formTeacher.experience_years ?? null,
+              base_price: formTeacher.base_price ?? null,
+              is_public: formTeacher.is_public ?? false,
+            });
+
+          if (teacherCreateError) throw teacherCreateError;
+        }
+
         const { error: teacherError } = await supabase
           .from("teacher_info")
           .update({
