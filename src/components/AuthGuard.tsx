@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/lib/application/auth/AuthService";
 import { SupabaseAuthRepository } from "@/lib/infrastructure/auth/SupabaseAuthRepository";
 import { supabase } from "@/lib/supabase";
+import { useUserStore } from "@/lib/store/userStore";
 
 // In a real DI container, this would be injected.
 // For now, we instantiate it here or in a singleton helper.
@@ -16,31 +17,37 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const hasCheckedAuthOnMount = useRef(false); // Add useRef to prevent multiple initial checks
+  const hasCheckedAuthOnMount = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Zustand store actions
+  const setUser = useUserStore((state) => state.setUser);
+  const setIsLoadingStore = useUserStore((state) => state.setIsLoading);
+
+  // ... (useEffects remain same, but catch block updates error state)
 
   useEffect(() => {
     let mounted = true;
 
     const checkAuth = async () => {
-      // If we've already performed the initial check and are not on the root path,
-      // and the component is not loading, we can skip re-checking unless pathname changes.
-      // However, the dependency array already handles pathname changes.
-      // This ref is primarily to ensure the initial navigation logic runs only once on mount.
       if (hasCheckedAuthOnMount.current && !isLoading) {
         return;
       }
+
+      // Reset error on new check
+      setError(null);
 
       try {
         if (pathname === "/") {
           if (mounted) {
             setIsAuthenticated(true);
             setIsLoading(false);
-            hasCheckedAuthOnMount.current = true; // Mark as checked
+            hasCheckedAuthOnMount.current = true;
           }
           return;
         }
 
-        // Add 10s timeout to prevent infinite loading
+        // Timeout 10s
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("Auth check timed out")), 10000)
         );
@@ -53,60 +60,52 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         if (user) {
-          // 1. Check Email Verification
-          if (!user.emailConfirmedAt) {
-            if (
-              pathname !== "/auth/login" &&
-              pathname !== "/auth/verify-email"
-            ) {
-              // Handle unverified email logic here if needed
-            }
-          }
-
-          // 2. Check First Login
-          // Refactored to GlobalOnboardingGuard for app-wide enforcement
-          // if (user.isFirstLogin === false) { ... }
-
           setIsAuthenticated(true);
+          setUser(user);
         } else {
           setIsAuthenticated(false);
+          setUser(null);
           const loginUrl = `/auth/login?redirect=${encodeURIComponent(
             pathname
           )}`;
-          router.replace(loginUrl); // Changed to router.replace
+          router.replace(loginUrl);
         }
-      } catch (error: any) {
+      } catch (err: any) {
         if (!mounted) return;
-        console.error("Error checking auth:", error);
+        console.error("Error checking auth:", err);
 
-        if (
-          error?.message?.includes("Invalid Refresh Token") ||
-          error?.message?.includes("Refresh Token Not Found") ||
-          error?.message === "Auth check timed out"
-        ) {
-          console.warn(
-            "Auth issue detected (Timeout or Invalid Token). Force signing out..."
-          );
-          await authService.signOut();
-        }
-
+        // Don't auto-redirect on timeout/network error, let user see the error
+        // forcing redirect might cause loop if the error is persistent
+        setError(err.message || "Authentication failed");
         setIsAuthenticated(false);
-        router.replace("/auth/login"); // Changed to router.replace
+
+        // Force logout if it's a critical auth error
+        if (
+          err?.message?.includes("Invalid Refresh Token") ||
+          err?.message?.includes("Refresh Token Not Found")
+        ) {
+          await authService.signOut();
+          setUser(null);
+          router.replace("/auth/login");
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
-          hasCheckedAuthOnMount.current = true; // Mark as checked after the first full check
+          setIsLoadingStore(false);
+          hasCheckedAuthOnMount.current = true;
         }
       }
     };
 
     checkAuth();
 
+    // Subscriber logic remains...
     const subscription = authService.onAuthStateChange((event, session) => {
       if (!mounted) return;
       if (event === "SIGNED_OUT" || !session) {
         setIsAuthenticated(false);
-        router.replace("/auth/login"); // Changed to router.replace
+        setUser(null);
+        router.replace("/auth/login");
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         setIsAuthenticated(true);
       }
@@ -116,7 +115,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [router, pathname, isLoading]); // Added isLoading to dependencies to re-evaluate when loading state changes
+  }, [router, pathname, isLoading, setUser, setIsLoadingStore]);
 
   if (isLoading) {
     return (
@@ -126,6 +125,46 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <p className="text-gray-500 dark:text-gray-400 font-medium">
             Checking authentication...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error UI if authentication failed with an error (and we didn't redirect)
+  if (error && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-3xl">
+              error
+            </span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Authentication Error
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {error === "Auth check timed out"
+              ? "Connection timed out. Please check your network or try again."
+              : "We couldn't verify your identity. Please try logging in again."}
+          </p>
+          <p className="text-xs text-gray-400 mb-6 font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded">
+            Error details: {error}
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-2 px-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.replace("/auth/login")}
+              className="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Go to Login
+            </button>
+          </div>
         </div>
       </div>
     );
