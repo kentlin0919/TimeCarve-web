@@ -2,6 +2,8 @@
 export interface CourseSection {
   id: string; // UUID
   title: string;
+  learningObjective?: string; // 學習目標
+  keyPoints?: string[]; // 單元重點 (可動態新增多個)
   duration?: number; // minutes
   isFree?: boolean; // Can be viewed without purchasing
   content?: string; // HTML or Markdown content

@@ -48,53 +48,37 @@ export default function CourseDetailForm({
     setForm((prev) => ({ ...prev, ...initialData }));
   }, [initialData]);
 
-      // Fetch course types
+  // Fetch course types
 
-      useEffect(() => {
+  useEffect(() => {
+    const fetchTypes = async () => {
+      const { data, error } = await supabase
 
-        const fetchTypes = async () => {
+        .from("class_type")
 
-          const { data, error } = await supabase
+        .select("name, label_zh")
 
-            .from("class_type")
+        .eq("is_active", true)
 
-            .select("name, label_zh")
+        .order("created_at", { ascending: true });
 
-            .eq("is_active", true)
+      if (error) {
+        console.error("Error fetching class_type for form:", error);
+      }
 
-            .order("created_at", { ascending: true });
+      if (data) {
+        setCourseTypes(data);
 
-          
+        if (!initialData.courseType && data.length > 0) {
+          setForm((prev) => ({ ...prev, courseType: data[0].name }));
+        }
+      }
+    };
 
-          if (error) {
+    fetchTypes();
+  }, [initialData.courseType]); // Depend on initialData.courseType to re-evaluate if needed
 
-            console.error("Error fetching class_type for form:", error);
-
-          }
-
-          
-
-          if (data) {
-
-            setCourseTypes(data);
-
-            if (!initialData.courseType && data.length > 0) {
-
-               setForm((prev) => ({ ...prev, courseType: data[0].name }));
-
-            }
-
-          }
-
-        };
-
-        fetchTypes();
-
-      }, [initialData.courseType]); // Depend on initialData.courseType to re-evaluate if needed
-
-  
-
-    // Fetch global tags
+  // Fetch global tags
   useEffect(() => {
     const fetchGlobalTags = async () => {
       const { data } = await supabase
@@ -284,28 +268,31 @@ export default function CourseDetailForm({
                     className="block w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none sm:text-sm py-2.5 px-3 font-bold text-lg placeholder-slate-400"
                   />
                 </div>
-                                <div className="col-span-1">
-                                  <Select
-                                    label="課程類型"
-                                    value={form.courseType || ""}
-                                    onChange={(e) => handleChange("courseType", e.target.value)}
-                                    options={courseTypes.map(t => ({ value: t.name, label: t.label_zh }))}
-                                    className="font-bold text-lg"
-                                    required
-                                  >
-                                    {courseTypes.length === 0 && (
-                                       // Fallback if DB is empty or fetch failed
-                                       <>
-                                         <option value="1-on-1">一對一教學</option>
-                                         <option value="group">團體課程</option>
-                                       </>
-                                    )}
-                                  </Select>
-                                </div>
-                                <div className="col-span-1">
-                                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
-                                    單價格設定 (TWD) <span className="text-red-500">*</span>
-                                  </label>
+                <div className="col-span-1">
+                  <Select
+                    label="課程類型"
+                    value={form.courseType || ""}
+                    onChange={(e) => handleChange("courseType", e.target.value)}
+                    options={courseTypes.map((t) => ({
+                      value: t.name,
+                      label: t.label_zh,
+                    }))}
+                    className="font-bold text-lg"
+                    required
+                  >
+                    {courseTypes.length === 0 && (
+                      // Fallback if DB is empty or fetch failed
+                      <>
+                        <option value="1-on-1">一對一教學</option>
+                        <option value="group">團體課程</option>
+                      </>
+                    )}
+                  </Select>
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
+                    單價格設定 (TWD) <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative flex items-center w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all overflow-hidden">
                     <span className="pl-4 text-text-sub text-sm font-medium">
                       NT$
@@ -503,6 +490,106 @@ export default function CourseDetailForm({
                         />
                       </div>
                     </div>
+
+                    {/* 學習目標 */}
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-text-sub mb-1 block flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-primary">
+                          flag
+                        </span>
+                        學習目標
+                      </label>
+                      <input
+                        type="text"
+                        value={section.learningObjective || ""}
+                        onChange={(e) =>
+                          handleUpdateSection(
+                            section.id,
+                            "learningObjective",
+                            e.target.value
+                          )
+                        }
+                        placeholder="例如：熟悉半調節式咬合器構造，並正確裝載上下顎模型。"
+                        className="block w-full rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none sm:text-sm py-2.5 px-3"
+                      />
+                    </div>
+
+                    {/* 單元重點 */}
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-text-sub mb-1 block flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-primary">
+                          checklist
+                        </span>
+                        單元重點
+                      </label>
+                      <div className="space-y-2">
+                        {(section.keyPoints || []).map((point, pointIdx) => (
+                          <div
+                            key={pointIdx}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="text-primary text-sm">•</span>
+                            <input
+                              type="text"
+                              value={point}
+                              onChange={(e) => {
+                                const newKeyPoints = [
+                                  ...(section.keyPoints || []),
+                                ];
+                                newKeyPoints[pointIdx] = e.target.value;
+                                handleUpdateSection(
+                                  section.id,
+                                  "keyPoints",
+                                  newKeyPoints
+                                );
+                              }}
+                              placeholder="輸入重點項目..."
+                              className="flex-1 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none sm:text-sm py-2 px-3"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newKeyPoints = (
+                                  section.keyPoints || []
+                                ).filter((_, i) => i !== pointIdx);
+                                handleUpdateSection(
+                                  section.id,
+                                  "keyPoints",
+                                  newKeyPoints
+                                );
+                              }}
+                              className="text-slate-400 hover:text-red-500 transition-colors"
+                              title="刪除此重點"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                remove_circle
+                              </span>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newKeyPoints = [
+                              ...(section.keyPoints || []),
+                              "",
+                            ];
+                            handleUpdateSection(
+                              section.id,
+                              "keyPoints",
+                              newKeyPoints
+                            );
+                          }}
+                          className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark transition-colors mt-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            add
+                          </span>
+                          新增重點項目
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1">
                       <div>
                         <label className="text-xs font-semibold text-text-sub mb-1 block">

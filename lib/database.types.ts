@@ -294,6 +294,7 @@ export type Database = {
           description: string | null
           course_type: string
           duration_minutes: number
+          minimum_hours: number | null
           price: number | null
           location: string | null
           is_active: boolean
@@ -307,6 +308,7 @@ export type Database = {
           description?: string | null
           course_type: string
           duration_minutes: number
+          minimum_hours?: number | null
           price?: number | null
           location?: string | null
           is_active?: boolean
@@ -320,6 +322,7 @@ export type Database = {
           description?: string | null
           course_type?: string
           duration_minutes?: number
+          minimum_hours?: number | null
           price?: number | null
           location?: string | null
           is_active?: boolean
