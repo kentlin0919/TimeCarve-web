@@ -18,6 +18,12 @@ export default function AdminSidebar({
 
   const isActive = (path: string) => pathname === path;
 
+  const normalizeRoute = (route?: string | null) => {
+    if (!route) return "";
+    if (route === "/admin/course-types") return "/admin/class-types";
+    return route;
+  };
+
   // Filter modules for admin role (Identity ID 1) and only active ones
   const adminModules = getModulesByIdentity(1).filter((m) => m.is_active);
 
@@ -73,13 +79,15 @@ export default function AdminSidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {adminModules.map((module) => (
+          {adminModules.map((module) => {
+            const route = normalizeRoute(module.route);
+            return (
             <Link
               key={module.id}
-              href={module.route || "#"}
+              href={route || "#"}
               onClick={() => onClose()}
               className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-                isActive(module.route || "")
+                isActive(route)
                   ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
               }`}
@@ -94,7 +102,7 @@ export default function AdminSidebar({
               </span>
               <span className="font-medium text-sm">{module.label}</span>
             </Link>
-          ))}
+          )})}
 
           {/* Always show Module Management if it's not in the list for some reason, 
               but ideally it should be in the DB list. 
