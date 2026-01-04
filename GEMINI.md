@@ -2,17 +2,16 @@
 
 ## 專案概述
 
-這是一個基於 **Next.js (App Router)** 構建的現代化家教預約平台專案，針對 **Static Export (GitHub Pages)** 進行了優化。TimeCarve 提供學生與教師高效的時間管理及課程預約工具，幫助他們規劃課表、管理預約、並追蹤個人化的學習進度。
+這是一個基於 **Next.js (App Router)** 構建的現代化家教預約平台專案，部署於 **Vercel**。TimeCarve 提供學生與教師高效的時間管理及課程預約工具，幫助他們規劃課表、管理預約、並追蹤個人化的學習進度。
 
 ## 技術堆疊
 
 - **前端框架:** [Next.js 16](https://nextjs.org/) (App Router)
 - **前端圖表:** [Chart.js](https://www.chartjs.org/)
-- **架構模式:** Static Export (`output: export`)
 - **後端服務:** [Supabase](https://supabase.com/) (PostgreSQL + Auth)
 - **語言:** [TypeScript](https://www.typescriptlang.org/)
 - **樣式:** [Tailwind CSS v4](https://tailwindcss.com/)
-- **部署:** GitHub Pages (via GitHub Actions)
+- **部署:** [Vercel](https://vercel.com/) (自動化 CI/CD)
 
 ## 快速開始
 
@@ -22,16 +21,23 @@
 pnpm install
 ```
 
-### 2. 啟動開發伺服器
+### 2. 設定環境變數
+
+建立 `.env.local` 檔案：
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+### 3. 啟動開發伺服器
 
 ```bash
 pnpm dev
 # 訪問 http://localhost:3000
 ```
 
-### 3. 建置生產版本
-
-此指令會生成 `out` 資料夾，包含完整的靜態網站檔案。
+### 4. 建置生產版本
 
 ```bash
 pnpm build
@@ -40,139 +46,132 @@ pnpm build
 ## 專案結構
 
 ```
-app/
-├─ layout.tsx                     # Root layout
-├─ not-found.tsx                  # 404 頁面
-├─ error.tsx                      # 錯誤處理
+time_carve_web/
+├── src/                          # 原始碼目錄
+│   ├── app/                      # Next.js App Router
+│   │   ├── (public)/             # 公開頁面群組 (無需登入)
+│   │   │   ├── auth/             # 登入/註冊/重設密碼
+│   │   │   ├── courses/          # 課程瀏覽
+│   │   │   └── teachers/         # 教師介紹
+│   │   │
+│   │   ├── student/              # 學生專區 (受 AuthGuard 保護)
+│   │   │   ├── dashboard/        # 儀表板
+│   │   │   ├── booking/          # 預約系統
+│   │   │   ├── bookings/         # 預約記錄
+│   │   │   │   └── [bookingId]/  # 預約詳情 (動態路由)
+│   │   │   └── profile/          # 個人檔案
+│   │   │
+│   │   ├── teacher/              # 教師後台 (受 AuthGuard 保護)
+│   │   │   ├── courses/          # 課程管理
+│   │   │   ├── students/         # 學生管理 CRM
+│   │   │   └── reports/          # 營收報表
+│   │   │
+│   │   ├── admin/                # 管理後台
+│   │   ├── layout.tsx            # 根佈局
+│   │   └── globals.css           # 全域樣式
+│   │
+│   ├── components/               # 共用 UI 組件
+│   │   ├── AuthGuard.tsx         # 權限守衛
+│   │   ├── ui/                   # 基礎 UI 組件
+│   │   └── providers/            # Context Providers
+│   │
+│   ├── hooks/                    # 自定義 React Hooks
+│   │   └── useSchools.ts
+│   │
+│   ├── lib/                      # 工具函數與設定
+│   │   ├── supabase.ts           # Supabase 客戶端
+│   │   ├── domain/               # 領域層 (實體與介面)
+│   │   ├── infrastructure/       # 基礎設施層 (Repository 實作)
+│   │   └── application/          # 應用層 (Use Cases)
+│   │
+│   └── types/                    # TypeScript 型別定義
+│       └── database.types.ts     # Supabase 資料庫型別
 │
-├─ components/                    # 共用組件
-│  └─ AuthGuard.tsx               # 客戶端權限守衛 (Client-side Auth)
-│
-├─ (public)/                      # 公開頁面 (無需登入)
-│  ├─ page.tsx                    # 首頁
-│  ├─ auth/                       # 登入/註冊 (Client Form)
-│  ├─ courses/                    # 課程瀏覽
-│  │  └─ [courseId]/              # 課程詳情 (需 generateStaticParams)
-│  └─ teachers/                   # 教師介紹
-│
-├─ student/                       # 學生專區 (受 AuthGuard 保護)
-│  ├─ layout.tsx                  # 包含 <AuthGuard>
-│  ├─ dashboard/                  # 儀表板
-│  ├─ booking/                    # 預約系統
-│  └─ profile/                    # 個人檔案
-│
-└─ teacher/                       # 教師後台 (受 AuthGuard 保護)
-   ├─ layout.tsx                  # 包含 <AuthGuard>
-   ├─ courses/                    # 課程管理 Editor
-   ├─ students/                   # 學生管理 CRM
-   └─ reports/                    # 營收報表
+├── public/                       # 靜態資源
+├── supabase/                     # Supabase 設定與 Migrations
+├── scripts/                      # 工具腳本
+└── 設定檔案
+```
+
+## 路徑別名 (Path Aliases)
+
+專案使用以下路徑別名（定義於 `tsconfig.json`）：
+
+| 別名             | 對應路徑             |
+| ---------------- | -------------------- |
+| `@/*`            | `./src/*`            |
+| `@/components/*` | `./src/components/*` |
+| `@/hooks/*`      | `./src/hooks/*`      |
+| `@/lib/*`        | `./src/lib/*`        |
+| `@/types/*`      | `./src/types/*`      |
+
+### 使用範例
+
+```typescript
+// ✅ 正確
+import { supabase } from "@/lib/supabase";
+import AuthGuard from "@/components/AuthGuard";
+import { useSchools } from "@/hooks/useSchools";
+import { Database } from "@/types/database.types";
+
+// ❌ 避免使用
+import { supabase } from "../../../lib/supabase";
 ```
 
 ## 核心架構說明
 
-### 1. Static Export (靜態輸出)
+### 1. Vercel 部署
 
-本專案設定為 `output: export` 以支援 GitHub Pages 部署。這意味著：
+本專案使用 Vercel 原生部署模式，支援：
 
-- **不支援 Node.js Runtime 功能** (如 `getServerSideProps`, Middleware)。
-- 所有 API 請求需由客戶端 (Client-side) 發起，直接對接 Supabase。
-- `next/image` 需設定 loader 或使用雲端圖片服務。
+- **Server-Side Rendering (SSR)**: 動態渲染頁面
+- **動態路由**: 如 `/student/bookings/[bookingId]` 無需預先生成
+- **API Routes**: 可根據需要建立 `/src/app/api/` 路由
+- **Edge Functions**: 支援邊緣計算功能
 
-### 2. 動態路由 (Dynamic Routes)
+### 2. 權限管理 (Client-side Auth)
 
-所有帶參數的路徑 (如 `[id]`) 必須實作 `generateStaticParams`，在建置時期預先生成 HTML。
+我們採用前端攔截策略進行權限管理：
 
-```tsx
-// 範例
-export async function generateStaticParams() {
-  return [{ id: "demo" }]; // 回傳所有可能的參數組合
-}
-```
+- **`AuthGuard.tsx`**: 檢查使用者登入狀態
+- 若無登入憑證，自動導向 `/auth/login`
+- 所有後台頁面 (`/student`, `/teacher`, `/admin`) 皆透過 Layout 包覆此守衛
 
-### 3. 權限管理 (Client-side Auth)
+### 3. Vercel 部署設定
 
-由於無法使用 Middleware，我們採用前端攔截策略：
+#### 連接 GitHub Repository
 
-- **`AuthGuard.tsx`**: 檢查瀏覽器 Cookie/LocalStorage。
-- 若無登入憑證，自動導向 `/auth/login`。
-- 所有後台頁面 (`/student`, `/teacher`) 皆透過 Layout 包覆此守衛。
+1. 前往 [vercel.com](https://vercel.com)
+2. 點擊 **Add New Project**
+3. Import 你的 GitHub repository
 
-### 4. GitHub Actions 部署
+#### 環境變數設定
 
-專案包含 `.github/workflows/deploy.yml`，每次推送到 `main` 分支時：
+在 Vercel 專案設定 (Settings → Environment Variables) 中新增：
 
-1. 自動執行 `pnpm install` 與 `pnpm build`。
-   - 建置過程中會讀取 GitHub Secrets (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) 注入環境變數。
-2. 將 `out` 資料夾部署至 GitHub Pages environment。
+| Variable                        | Value                     |
+| ------------------------------- | ------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | 你的 Supabase Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 你的 Supabase Anon Key    |
 
-### 5. 環境變數設定 (Environment Variables)
+### 4. Clean Architecture (整潔架構)
 
-為了讓 Supabase 在 GitHub Pages 正確運作，請在 GitHub Repository Settings 中設定以下 Secrets：
+本專案採用 Clean Architecture 的設計原則：
 
-1. 進入 **Settings** > **Secrets and variables** > **Actions**。
-2. 點擊 **New repository secret**。
-3. 新增以下兩組密鑰：
-   - `NEXT_PUBLIC_SUPABASE_URL`: 您的 Supabase Project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: 您的 Supabase Project API Key (Anon)
+**分層架構**：
 
-### 6. Clean Architecture (整潔架構)
+1. **領域層 (`lib/domain/`)**: 定義核心實體和業務規則
+2. **應用層 (`lib/application/`)**: 包含 Use Cases
+3. **基礎設施層 (`lib/infrastructure/`)**: 實作資料存取（Supabase）
+4. **表示層 (`app/`, `components/`)**: React 組件和頁面
 
-本專案鼓勵採用 Clean Architecture (整潔架構) 的設計原則，以實現高可維護性、高可測試性及框架獨立性。雖然這是一個前端專案，但其核心思想對於複雜邏輯的組織與擴展至關重要。
+## 資料庫版本控制規範 (Supabase)
 
-**核心原則**：
+### Migration 建立規則
 
-- **獨立於框架 (Framework Independence)**：架構不應依賴於特定函式庫或框架（如 Next.js）。
-- **可測試性 (Testability)**：業務邏輯應能獨立於 UI、資料庫、API 等外部因素進行測試。
-- **獨立於 UI (UI Independence)**： UI 可以在不改變系統其他部分的情況下輕鬆替換。
-- **獨立於資料庫 (Database Independence)**：資料庫可以輕鬆替換（例如從 Supabase 換到 Firebase）。
+- **必須使用 CLI 指令**：如須建立資料庫變更，**必須**使用 `supabase migration new <name>` 指令
 
-**分層與應用**：
-
-儘管前端專案無法完全實現如傳統後端般嚴格的四層結構，但可以借鑒其核心思想，將應用程式邏輯劃分為以下層次：
-
-1.  **領域層 (Domain Layer)**
-
-    - **內容**：定義應用程式的核心實體 (Entities)、業務規則 (Business Rules) 和通用介面 (Interfaces)。它是應用程式最內層，不依賴任何其他層。
-    - **本專案應用**：定義學生、教師、課程、預約等核心資料結構 (TypeScript Interfaces/Types)，以及這些資料操作的通用規則。
-
-2.  **應用層 (Application Layer)**
-
-    - **內容**：包含應用程式的特定業務邏輯 (Use Cases)，協調領域層實體來完成特定功能。它定義了資料如何進出系統，並定義了資料庫（或外部服務）的抽象介面 (Repository Interfaces)。
-    - **本專案應用**：定義如 `bookCourseUseCase` (預約課程)、`updateUserProfileUseCase` (更新用戶資料) 等操作。這些 Use Case 會依賴在領域層定義的介面（例如 `UserRepository`, `CourseRepository`）。
-
-3.  **基礎設施層 (Infrastructure Layer)**
-
-    - **內容**：實作應用層定義的所有抽象介面，處理與外部服務的互動。
-    - **本專案應用**：
-      - **資料庫實作**：使用 `@supabase/supabase-js` 實際呼叫 Supabase 進行資料的 CRUD 操作，實作 `UserRepositoryImpl`, `CourseRepositoryImpl` 等。
-      - **身份驗證**：Supabase Auth 相關的 API 呼叫。
-      - **服務整合**：未來可能包含其他第三方服務的 API 呼叫。
-
-4.  **表示層 (Presentation Layer)**
-    - **內容**：UI 層，負責資料的呈現與使用者互動。它不包含任何業務邏輯，只負責協調應用層的 Use Cases 並呈現結果。
-    - **本專案應用**：Next.js 的 `app` Router 頁面、共用元件 (Components)、Hooks 等，它們呼叫應用層定義的 Use Cases，並將結果呈現在畫面上。
-
-**優勢**：
-
-- **易於測試**：核心業務邏輯 (領域層和應用層) 可以獨立測試，無需模擬 UI 或資料庫。
-- **易於維護**：各層職責分離，修改某一層通常不會影響到其他層。
-- **靈活性**：可輕鬆替換技術棧，例如將 Supabase 替換為其他後端服務，只需修改基礎設施層的實作。
-
-透過這種分層，即使專案規模擴大，也能保持清晰的結構與良好的可擴展性。
-
-## 資料庫版本控制規範 (Supabase Gitignore)
-
-本專案預設會將 Supabase 的資料庫結構定義 (Schema) 和初始資料 (Seed Data) 納入 Git 版本控制，以確保開發、協作與部署的一致性。
-
-### 追蹤的重要性
-
-- **`supabase/migrations/` (Schema 定義)**：這些檔案記錄了資料庫結構從零開始到目前狀態的所有變更步驟。無論是重建本地開發環境、部署到新環境，還是回溯資料庫版本，都極度依賴這些檔案。即使是單人開發，它們也是重建資料庫、確保不同環境（如開發、測試、生產）Schema 一致性的關鍵。
-- **`supabase/seed.sql` (初始資料)**：此檔案包含資料庫在啟動後所需的基本常數資料，例如身份類型、預設狀態等。它確保每次資料庫重置 (`supabase db reset`) 後，應用程式都能擁有必要的初始數據。
-- **`supabase/functions/` (Edge Functions)**：Edge Functions 的程式碼也應被追蹤，以確保雲端邏輯的一致性。
-
-### `.gitignore` 預設設定
-
-為達成上述目標，本專案的 `.gitignore` 對 `supabase/` 目錄的預設設定如下：
+### `.gitignore` 設定
 
 ```
 # Supabase
@@ -182,75 +181,31 @@ supabase/functions/*/deno.lock
 supabase/functions/*/target/
 ```
 
-此設定確保了 `supabase/migrations/`、`supabase/seed.sql` 和 `supabase/functions/` 中的程式碼會被正常追蹤，同時忽略了 `supabase` CLI 產生的本地暫存或快取檔案。
-
-### 特殊考量與風險
-
-在某些特定情況下（例如專案為公開開源，且專案擁有者希望保護資料庫 Schema 的設計細節，不對外公開所有 Table 名稱或結構），可能會選擇將 `supabase/migrations/` 和 `supabase/seed.sql` 加入 `.gitignore`。
-
-**若選擇忽略這些檔案，請務必了解以下風險：**
-
-- **失去資料庫 Schema 的版本控制**：一旦這些檔案被忽略，資料庫結構的歷史變更將無法透過 Git 追溯。
-- **環境重建困難**：在新的開發環境或部署流程中，將無法透過自動化方式重建資料庫結構。
-- **協作複雜性增加**：若有多人開發，將難以確保資料庫 Schema 的同步與一致性。
-- **部署風險**：部署到遠端 Supabase 專案時，需要手動管理或重新生成 Migration，增加了操作的複雜度與錯誤率。
-
-強烈建議：除非您明確了解並接受上述風險，否則應維持 `migrations` 和 `seed.sql` 被 Git 追蹤。資料庫的安全性主要應依賴於 Supabase 的 Row Level Security (RLS) 策略，而非隱藏 Schema。
-
-### Migration 建立規則
-
-- **必須使用 CLI 指令**：如須建立資料庫變更 (Migration)，**必須**使用 `supabase migration new <name>` 指令來產生 SQL 檔案，禁止手動建立檔案。
-
 ## 功能模組詳情
 
 ### 前台 (學生端)
 
-- **首頁與作品集:** RWD 響應式設計，高互動性 UI。
-- **課程方案:** 靜態生成的課程列表與詳情頁。
-- **學員系統:** 登入後可管理預約、查看課程內容。
+- **首頁與作品集:** RWD 響應式設計，高互動性 UI
+- **課程方案:** 課程列表與詳情頁
+- **學員系統:** 登入後可管理預約、查看課程內容
 
 ### 後台 (教師管理端)
 
-- **課程管理:** 編輯課程內容與教案 (支援富文本)。
-- **預約系統:** 管理學生預約請求。
-- **CRM:** 追蹤學生學習進度與作品集。
+- **課程管理:** 編輯課程內容與教案 (支援富文本)
+- **預約系統:** 管理學生預約請求
+- **CRM:** 追蹤學生學習進度與作品集
 
-## ⚠️ 靜態網站開發規則 (Static Export Rules)
+## 開發規則
 
-本專案使用 `output: export` 靜態輸出模式，**必須遵守以下開發規則**：
-
-### 禁止使用的功能
-
-| 功能                                    | 原因                 | 替代方案                                       |
-| --------------------------------------- | -------------------- | ---------------------------------------------- |
-| `middleware.ts`                         | Static Export 不支援 | 使用 `AuthGuard.tsx` 客戶端守衛                |
-| `@supabase/ssr` 的 `createServerClient` | 需要 Server Runtime  | 使用 `@supabase/supabase-js` 的 `createClient` |
-| `next/headers` 的 `cookies()`           | 需要 Server Runtime  | 使用 `document.cookie` 或 Supabase 自動處理    |
-| `getServerSideProps`                    | 需要 Server Runtime  | 使用 `useEffect` + Client Fetch                |
-| API Routes (`app/api/*`)                | 需要 Server Runtime  | 直接呼叫 Supabase / Edge Functions             |
-
-### Supabase 客戶端使用規則
+### Supabase 客戶端使用
 
 ```typescript
-// ✅ 正確：使用 @supabase/supabase-js
-import { createClient } from "@supabase/supabase-js";
+// 標準用法
+import { supabase } from "@/lib/supabase";
 
-export function createClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-
-// ❌ 錯誤：不要使用 @supabase/ssr 的 Server 版本
-import { createServerClient } from "@supabase/ssr"; // 禁止
+// 查詢資料
+const { data, error } = await supabase.from("courses").select("*");
 ```
-
-### Cookie 處理規則
-
-- **不能在 Server 端寫入 Cookie** (沒有 Server)
-- Supabase Auth 會**自動**在 Client 端管理 Session Cookie
-- 如需自訂 Cookie，使用 `document.cookie` 或 `js-cookie` 套件
 
 ### TypeScript 設定
 
@@ -261,8 +216,3 @@ import { createServerClient } from "@supabase/ssr"; // 禁止
   "exclude": ["node_modules", "supabase/functions"]
 }
 ```
-
-### 檔案命名規則
-
-- **禁止** 在專案根目錄建立 `middleware.ts` 或 `proxy.ts`
-- **禁止** 建立 `app/api/` 目錄下的 API Routes
