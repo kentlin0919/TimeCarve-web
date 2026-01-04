@@ -152,7 +152,7 @@ export default function StudentProfilePage() {
       const { data: schoolId, error: schoolError } = await supabase.rpc(
         "get_or_create_school",
         {
-          p_code: schoolCode,
+          p_code: schoolCode || "",
           p_name: school,
         }
       );

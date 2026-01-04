@@ -75,6 +75,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         basePrice: teacherData.base_price,
         specialties: teacherData.specialties || [],
         philosophyItems: (teacherData.philosophy_items as any) || [],
+        philosophySubtitle: teacherData.philosophy_subtitle,
         isPublic: teacherData.is_public || false,
         
         googleCalendarEnabled: teacherData.google_calendar_enabled || false,
@@ -103,6 +104,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
     if (profile.basePrice !== undefined) teacherInfoUpdates.base_price = profile.basePrice;
     if (profile.specialties !== undefined) teacherInfoUpdates.specialties = profile.specialties;
     if (profile.philosophyItems !== undefined) teacherInfoUpdates.philosophy_items = profile.philosophyItems;
+    if (profile.philosophySubtitle !== undefined) teacherInfoUpdates.philosophy_subtitle = profile.philosophySubtitle;
     if (profile.isPublic !== undefined) teacherInfoUpdates.is_public = profile.isPublic;
     if (profile.googleCalendarEnabled !== undefined) teacherInfoUpdates.google_calendar_enabled = profile.googleCalendarEnabled;
     if (profile.lineNotifyEnabled !== undefined) teacherInfoUpdates.line_notify_enabled = profile.lineNotifyEnabled;
@@ -146,6 +148,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         teacher_id: userId,
         school_id: education.schoolId,
         degree: education.degree,
+        degree_level: education.degreeLevel,
         department: education.department,
         start_year: education.startYear,
         end_year: education.endYear,
@@ -169,7 +172,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
       department: data.department,
       startYear: data.start_year,
       endYear: data.end_year,
-      isVerified: data.is_verified,
+      isVerified: data.is_verified || false,
     };
   }
 

@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface CourseType {
-  id: string;
+  class_type_id: number;
   name: string;
-  label_zh: string;
+  label_zh: string | null;
   is_active: boolean | null;
   created_at: string | null;
 }
@@ -22,7 +22,7 @@ export default function CourseTypesPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
     "all"
   );
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchTypes();
@@ -57,7 +57,7 @@ export default function CourseTypesPage() {
 
     try {
       setSaving(true);
-      if (currentType.id) {
+      if (currentType.class_type_id) {
         // Update
         const { error } = await supabase
           .from("class_type")
@@ -66,7 +66,7 @@ export default function CourseTypesPage() {
             label_zh: trimmedLabel,
             is_active: currentType.is_active,
           })
-          .eq("id", currentType.id);
+          .eq("class_type_id", currentType.class_type_id);
         if (error) throw error;
       } else {
         // Create
@@ -89,36 +89,43 @@ export default function CourseTypesPage() {
   };
 
   const handleToggleActive = async (type: CourseType) => {
-    setUpdatingId(type.id);
+    setUpdatingId(type.class_type_id);
     setError(null);
     const nextValue = !type.is_active;
     setTypes((prev) =>
       prev.map((item) =>
-        item.id === type.id ? { ...item, is_active: nextValue } : item
+        item.class_type_id === type.class_type_id
+          ? { ...item, is_active: nextValue }
+          : item
       )
     );
 
     const { error } = await supabase
       .from("class_type")
       .update({ is_active: nextValue })
-      .eq("id", type.id);
+      .eq("class_type_id", type.class_type_id);
 
     if (error) {
       console.error("Error updating type:", error);
       setError("更新狀態失敗，請稍後再試。");
       setTypes((prev) =>
         prev.map((item) =>
-          item.id === type.id ? { ...item, is_active: type.is_active } : item
+          item.class_type_id === type.class_type_id
+            ? { ...item, is_active: type.is_active }
+            : item
         )
       );
     }
     setUpdatingId(null);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!confirm("確定要刪除此類型嗎？")) return;
 
-    const { error } = await supabase.from("class_type").delete().eq("id", id);
+    const { error } = await supabase
+      .from("class_type")
+      .delete()
+      .eq("class_type_id", id);
     if (error) {
       alert("刪除失敗：" + error.message);
     } else {
@@ -130,7 +137,7 @@ export default function CourseTypesPage() {
     return types.filter((type) => {
       const matchesQuery =
         type.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        type.label_zh.toLowerCase().includes(searchQuery.toLowerCase());
+        (type.label_zh?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       const matchesStatus =
         statusFilter === "all"
           ? true
@@ -228,7 +235,7 @@ export default function CourseTypesPage() {
             ) : (
               filteredTypes.map((type) => (
                 <tr
-                  key={type.id}
+                  key={type.class_type_id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   <td className="px-6 py-4 font-mono text-sm text-gray-600 dark:text-gray-300">
@@ -265,12 +272,12 @@ export default function CourseTypesPage() {
                     <button
                       onClick={() => handleToggleActive(type)}
                       className="text-gray-500 hover:text-gray-700 mr-3 disabled:opacity-50"
-                      disabled={updatingId === type.id}
+                      disabled={updatingId === type.class_type_id}
                     >
                       {type.is_active ? "停用" : "啟用"}
                     </button>
                     <button
-                      onClick={() => handleDelete(type.id)}
+                      onClick={() => handleDelete(type.class_type_id)}
                       className="text-red-500 hover:text-red-600"
                     >
                       刪除
@@ -289,7 +296,7 @@ export default function CourseTypesPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700">
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {currentType.id ? "編輯類型" : "新增類型"}
+                {currentType.class_type_id ? "編輯類型" : "新增類型"}
               </h3>
               <button
                 onClick={() => setIsEditing(false)}

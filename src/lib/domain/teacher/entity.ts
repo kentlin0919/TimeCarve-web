@@ -31,6 +31,7 @@ export interface TeacherProfile {
     description: string;
     icon: string;
   }[];
+  philosophySubtitle: string | null;
   isPublic: boolean;
   
   // Settings

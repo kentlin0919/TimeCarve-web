@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { TeacherProfile, TeacherEducation } from "@/lib/domain/teacher/entity";
 import Image from "next/image";
 import { updateUserAvatar } from "@/lib/avatar";
+import { useSchools } from "@/hooks/useSchools";
+import SchoolCombobox from "@/components/ui/SchoolCombobox";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   initialProfile: TeacherProfile;
@@ -13,6 +16,16 @@ interface Props {
   ) => Promise<TeacherEducation | null>;
   onDeleteEducation: (id: string) => Promise<void>;
 }
+
+const DEGREE_LEVELS = [
+  { value: "doctoral", label: "博士 (Doctoral)" },
+  { value: "master", label: "碩士 (Master)" },
+  { value: "bachelor", label: "學士 (Bachelor)" },
+  { value: "associate", label: "副學士 (Associate)" },
+  { value: "senior_high", label: "高中/職 (Senior High)" },
+  { value: "junior_high", label: "國中 (Junior High)" },
+  { value: "elementary", label: "國小 (Elementary)" },
+];
 
 export default function TeacherProfileForm({
   initialProfile,
@@ -41,6 +54,19 @@ export default function TeacherProfileForm({
   const [publicUrl, setPublicUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Education State
+  const schools = useSchools();
+  const [isAddingEducation, setIsAddingEducation] = useState(false);
+  const [addingEduLoading, setAddingEduLoading] = useState(false);
+  const [newEdu, setNewEdu] = useState({
+    schoolName: "",
+    degree: "",
+    degreeLevel: "bachelor",
+    department: "",
+    startYear: "",
+    endYear: "",
+  });
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const origin = window.location.origin;
@@ -66,6 +92,68 @@ export default function TeacherProfileForm({
       alert(`儲存失敗：${(e as Error).message || "請稍後再試"}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddEducationSubmit = async () => {
+    if (!newEdu.schoolName || !newEdu.startYear) {
+      alert("請填寫學校名稱與入學年份");
+      return;
+    }
+
+    setAddingEduLoading(true);
+    try {
+      // 1. Resolve School ID (Get or Create)
+      // Find school code from list if matched by name
+      const matchedSchool = schools.find((s) => s.name === newEdu.schoolName);
+      const p_code = matchedSchool ? matchedSchool.code : null;
+      
+      const { data: schoolId, error: rpcError } = await supabase.rpc(
+        "get_or_create_school",
+        {
+          p_code: p_code || "", // Pass empty string if code is null/undefined to satisfy type
+          p_name: newEdu.schoolName,
+          p_city: undefined, // Optional
+          p_website: undefined,
+        }
+      );
+
+      if (rpcError || !schoolId) {
+        throw new Error(rpcError?.message || "School resolution failed");
+      }
+
+      // 2. Add Education
+      const added = await onAddEducation({
+        schoolId: schoolId,
+        schoolName: newEdu.schoolName, // Just for UI optimism if needed, though repo fetches it
+        degree: newEdu.degree,
+        degreeLevel: newEdu.degreeLevel,
+        department: newEdu.department,
+        startYear: parseInt(newEdu.startYear),
+        endYear: newEdu.endYear ? parseInt(newEdu.endYear) : null,
+        isVerified: false,
+      });
+
+      if (added) {
+        setProfile((prev) => ({
+          ...prev,
+          educations: [added, ...prev.educations],
+        }));
+        setIsAddingEducation(false);
+        setNewEdu({
+            schoolName: "",
+            degree: "",
+            degreeLevel: "bachelor",
+            department: "",
+            startYear: "",
+            endYear: "",
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("新增學歷失敗：" + err.message);
+    } finally {
+      setAddingEduLoading(false);
     }
   };
 
@@ -464,6 +552,23 @@ export default function TeacherProfileForm({
                 新增卡片
               </button>
             </div>
+            <div className="space-y-1.5 mb-4">
+              <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                教學理念副標題
+              </label>
+              <textarea
+                rows={2}
+                value={profile.philosophySubtitle || ""}
+                onChange={(e) =>
+                  handleChange("philosophySubtitle", e.target.value)
+                }
+                placeholder="簡述您的教學理念..."
+                className="w-full px-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              />
+              <p className="text-xs text-text-sub">
+                此內容將顯示在公開個人頁「我的教學理念」標題下方
+              </p>
+            </div>
             <div className="space-y-4">
               {(profile.philosophyItems || []).length === 0 && (
                 <p className="text-sm text-text-sub">尚未設定教學理念卡片。</p>
@@ -554,52 +659,175 @@ export default function TeacherProfileForm({
             </div>
           </div>
 
-          {/* Education - Read Only for MVP or Simple List for now */}
+          {/* Education */}
           <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark">
             <h3 className="font-bold text-slate-800 dark:text-white mb-6 border-b border-border-light dark:border-border-dark pb-3 flex justify-between items-center">
               <span>學歷背景</span>
-              {/* Add Education Button - can implement modal later */}
-              {/* <button className="text-xs text-primary font-bold">+ 新增學歷</button> */}
+              {!isAddingEducation && (
+                <button
+                  onClick={() => setIsAddingEducation(true)}
+                  className="text-xs text-primary font-bold hover:underline"
+                >
+                  + 新增學歷
+                </button>
+              )}
             </h3>
+
+            {isAddingEducation && (
+              <div className="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                    學校名稱 <span className="text-red-500">*</span>
+                  </label>
+                  <SchoolCombobox
+                    schools={schools}
+                    value={newEdu.schoolName}
+                    onChange={(val) =>
+                      setNewEdu((prev) => ({ ...prev, schoolName: val }))
+                    }
+                    placeholder="搜尋或輸入學校名稱..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                      學歷階段 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={newEdu.degreeLevel}
+                      onChange={(e) =>
+                        setNewEdu((prev) => ({
+                          ...prev,
+                          degreeLevel: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    >
+                      {DEGREE_LEVELS.map((level) => (
+                        <option key={level.value} value={level.value}>
+                          {level.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                      學位/系所名稱
+                    </label>
+                    <input
+                      type="text"
+                      value={newEdu.department}
+                      onChange={(e) =>
+                        setNewEdu((prev) => ({
+                          ...prev,
+                          department: e.target.value,
+                        }))
+                      }
+                      placeholder="例如：資訊工程學系"
+                      className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                      入學年份 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={newEdu.startYear}
+                      onChange={(e) =>
+                        setNewEdu((prev) => ({
+                          ...prev,
+                          startYear: e.target.value,
+                        }))
+                      }
+                      placeholder="YYYY"
+                      className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                      畢業年份 (選填)
+                    </label>
+                    <input
+                      type="number"
+                      value={newEdu.endYear}
+                      onChange={(e) =>
+                        setNewEdu((prev) => ({
+                          ...prev,
+                          endYear: e.target.value,
+                        }))
+                      }
+                      placeholder="YYYY"
+                      className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setIsAddingEducation(false)}
+                    className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleAddEducationSubmit}
+                    disabled={addingEduLoading}
+                    className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50"
+                  >
+                    {addingEduLoading ? "處理中..." : "確認新增"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {profile.educations.length === 0 ? (
               <p className="text-text-sub text-sm">尚無學歷資料。</p>
             ) : (
               <div className="space-y-4">
-                {profile.educations.map((edu) => (
-                  <div
-                    key={edu.id}
-                    className="flex justify-between items-start p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
-                  >
-                    <div>
-                      <h4 className="font-bold text-slate-800 dark:text-white">
-                        {edu.schoolName}
-                      </h4>
-                      <p className="text-sm text-text-sub">
-                        {[
-                          edu.department,
-                          edu.degreeLevel || edu.degree,
-                          edu.studyYear != null
-                            ? `大學 ${edu.studyYear} 年級`
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
-                      <p className="text-xs text-text-sub mt-1">
-                        {edu.startYear} - {edu.endYear || "迄今"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onDeleteEducation(edu.id)}
-                      className="text-slate-400 hover:text-red-500 p-1"
+                {profile.educations.map((edu) => {
+                  const levelLabel =
+                    DEGREE_LEVELS.find((l) => l.value === edu.degreeLevel)
+                      ?.label ||
+                    edu.degreeLevel ||
+                    "";
+                  return (
+                    <div
+                      key={edu.id}
+                      className="flex justify-between items-start p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        delete
-                      </span>
-                    </button>
-                  </div>
-                ))}
+                      <div>
+                        <h4 className="font-bold text-slate-800 dark:text-white">
+                          {edu.schoolName}
+                        </h4>
+                        <p className="text-sm text-text-sub">
+                          {[
+                            levelLabel ? levelLabel.split(" ")[0] : null, // Show only Chinese part
+                            edu.department,
+                            edu.degree,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        <p className="text-xs text-text-sub mt-1">
+                          {edu.startYear} - {edu.endYear || "迄今"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => onDeleteEducation(edu.id)}
+                        className="text-slate-400 hover:text-red-500 p-1"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          delete
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

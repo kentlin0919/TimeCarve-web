@@ -36,7 +36,7 @@ export default function CourseDetailForm({
   const { showModal } = useModal();
   const [currentTagInput, setCurrentTagInput] = useState("");
   const [courseTypes, setCourseTypes] = useState<
-    { name: string; label_zh: string }[]
+    { name: string; label_zh: string | null }[]
   >([]);
   const [globalTags, setGlobalTags] = useState<{ id: string; name: string }[]>(
     []
@@ -275,7 +275,7 @@ export default function CourseDetailForm({
                     onChange={(e) => handleChange("courseType", e.target.value)}
                     options={courseTypes.map((t) => ({
                       value: t.name,
-                      label: t.label_zh,
+                      label: t.label_zh || t.name,
                     }))}
                     className="font-bold text-lg"
                     required

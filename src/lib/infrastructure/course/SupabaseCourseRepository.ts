@@ -90,7 +90,7 @@ export class SupabaseCourseRepository implements CourseRepository {
       // Need teacherId. Fallback to existing data's teacher_id if not in partial update
       let teacherId = course.teacherId;
       if (!teacherId && data) {
-         teacherId = data.teacher_id;
+         teacherId = data.teacher_id || undefined;
       }
       if (teacherId) {
          await this.saveTags(id, teacherId, course.tags);

@@ -21,6 +21,7 @@ type PublicTeacherProfile = {
         icon: string;
       }[]
     | null;
+  philosophy_subtitle: string | null;
   educations:
     | {
         school_name: string | null;
@@ -389,7 +390,7 @@ function TeachersContent() {
                     我的教學理念
                   </h2>
                   <p className="text-lg text-gray-500 dark:text-gray-400 font-light">
-                    {bio}
+                    {profile.philosophy_subtitle || ""}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
