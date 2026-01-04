@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/lib/application/auth/AuthService";
 import { SupabaseAuthRepository } from "@/lib/infrastructure/auth/SupabaseAuthRepository";
-import { supabase } from "@/lib/supabase";
 import { useUserStore } from "@/lib/store/userStore";
+
+import { useSystemModules } from "@/hooks/useSystemModules";
 
 // In a real DI container, this would be injected.
 // For now, we instantiate it here or in a singleton helper.
@@ -24,12 +25,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const setUser = useUserStore((state) => state.setUser);
   const setIsLoadingStore = useUserStore((state) => state.setIsLoading);
 
-  // ... (useEffects remain same, but catch block updates error state)
+  // System Modules
+  const { modules, loading: modulesLoading } = useSystemModules();
 
+  // 1. Auth Check Effect
   useEffect(() => {
     let mounted = true;
 
     const checkAuth = async () => {
+      // NOTE: We do NOT wait for modulesLoading here. This runs in parallel.
+
       if (hasCheckedAuthOnMount.current && !isLoading) {
         return;
       }
@@ -72,22 +77,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       } catch (err: any) {
         if (!mounted) return;
-        console.error("Error checking auth:", err);
 
-        // Don't auto-redirect on timeout/network error, let user see the error
-        // forcing redirect might cause loop if the error is persistent
-        setError(err.message || "Authentication failed");
-        setIsAuthenticated(false);
-
-        // Force logout if it's a critical auth error
-        if (
-          err?.message?.includes("Invalid Refresh Token") ||
-          err?.message?.includes("Refresh Token Not Found")
-        ) {
-          await authService.signOut();
-          setUser(null);
-          router.replace("/auth/login");
+        // Downgrade timeout log to warn or info since we handle it by redirecting
+        if (err?.message === "Auth check timed out") {
+          console.warn("Auth check timed out - redirecting to login");
+        } else {
+          console.error("Error checking auth:", err);
         }
+
+        // If auth check fails (timeout or other error), assume unauthenticated and redirect
+        // This avoids showing "Timeout" error messages to the user
+        setIsAuthenticated(false);
+        setUser(null);
+        router.replace("/auth/login");
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -99,7 +101,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     checkAuth();
 
-    // Subscriber logic remains...
+    // Subscriber logic
     const subscription = authService.onAuthStateChange((event, session) => {
       if (!mounted) return;
       if (event === "SIGNED_OUT" || !session) {
@@ -115,9 +117,52 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [router, pathname, isLoading, setUser, setIsLoadingStore]);
+  }, [
+    router,
+    pathname,
+    isLoading, // Kept to avoid double-firing if state changes rapidly
+    setUser,
+    setIsLoadingStore,
+  ]);
 
-  if (isLoading) {
+  // 2. Route Access Check Effect (Runs when both Auth and Modules are ready)
+  useEffect(() => {
+    // Only check if we are authenticated AND modules have finished loading
+    if (isLoading || modulesLoading || !isAuthenticated) return;
+
+    // Filter modules that are potential matches (prefix)
+    // If route is public (start with /auth), we skip.
+    if (pathname.startsWith("/auth") || pathname === "/") return;
+
+    const currentUser = useUserStore.getState().user;
+    if (!currentUser || !currentUser.identityId) return;
+
+    // Filter matching modules
+    // Match route AND identity matches the user's identity
+    const matchingModules = modules.filter(
+      (m) =>
+        m.route &&
+        pathname.startsWith(m.route) &&
+        m.identity_id === currentUser.identityId
+    );
+
+    // Sort by length desc to find most specific
+    matchingModules.sort(
+      (a, b) => (b.route?.length || 0) - (a.route?.length || 0)
+    );
+
+    if (matchingModules.length > 0) {
+      const specificModule = matchingModules[0];
+      if (!specificModule.is_active) {
+        console.warn(
+          `Access denied to module: ${specificModule.label} (${specificModule.key})`
+        );
+        router.replace("/");
+      }
+    }
+  }, [isLoading, modulesLoading, isAuthenticated, modules, pathname, router]);
+
+  if (isLoading || modulesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">

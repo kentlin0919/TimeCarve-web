@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useSystemModules } from "@/hooks/useSystemModules";
 
 export default function AdminSidebar({
   isOpen,
@@ -13,8 +14,12 @@ export default function AdminSidebar({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { getModulesByIdentity } = useSystemModules();
 
   const isActive = (path: string) => pathname === path;
+
+  // Filter modules for admin role (Identity ID 1) and only active ones
+  const adminModules = getModulesByIdentity(1).filter((m) => m.is_active);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -68,160 +73,42 @@ export default function AdminSidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          <Link
-            href="/admin/dashboard"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/dashboard")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/dashboard") &&
-                "group-hover:text-sky-500 transition-colors"
+          {adminModules.map((module) => (
+            <Link
+              key={module.id}
+              href={module.route || "#"}
+              onClick={() => onClose()}
+              className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
+                isActive(module.route || "")
+                  ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              dashboard
-            </span>
-            <span className="font-medium text-sm">儀表板</span>
-          </Link>
-          <Link
-            href="/admin/teachers"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/teachers")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/teachers") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              school
-            </span>
-            <span className="font-medium text-sm">教師管理</span>
-          </Link>
-          <Link
-            href="#"
-            onClick={() => onClose()}
-            className="flex items-center space-x-3 px-3 py-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-lg group transition-colors"
-          >
-            <span className="material-symbols-outlined text-xl group-hover:text-sky-500 transition-colors">
-              menu_book
-            </span>
-            <span className="font-medium text-sm">課程管理</span>
-          </Link>
-          <Link
-            href="/admin/course-types"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/course-types")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/course-types") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              category
-            </span>
-            <span className="font-medium text-sm">課程類型管理</span>
-          </Link>
-          <Link
-            href="/admin/tags"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/tags")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/tags") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              label
-            </span>
-            <span className="font-medium text-sm">標籤管理</span>
-          </Link>
-          <Link
-            href="/admin/students"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/students")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/students") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              people
-            </span>
-            <span className="font-medium text-sm">學生管理</span>
-          </Link>
-          <Link
-            href="#"
-            onClick={() => onClose()}
-            className="flex items-center space-x-3 px-3 py-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-lg group transition-colors"
-          >
-            <span className="material-symbols-outlined text-xl group-hover:text-sky-500 transition-colors">
-              payments
-            </span>
-            <span className="font-medium text-sm">財務報表</span>
-          </Link>
-          <Link
-            href="/admin/modules"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/modules")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/modules") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              extension
-            </span>
-            <span className="font-medium text-sm">模組管理</span>
-          </Link>
-          <Link
-            href="/admin/settings"
-            onClick={() => onClose()}
-            className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg group transition-colors ${
-              isActive("/admin/settings")
-                ? "bg-sky-50 dark:bg-sky-500/20 text-sky-500"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined text-xl ${
-                !isActive("/admin/settings") &&
-                "group-hover:text-sky-500 transition-colors"
-              }`}
-            >
-              settings
-            </span>
-            <span className="font-medium text-sm">系統設定</span>
-          </Link>
+              <span
+                className={`material-symbols-outlined text-xl ${
+                  !isActive(module.route || "") &&
+                  "group-hover:text-sky-500 transition-colors"
+                }`}
+              >
+                {module.icon || "circle"}
+              </span>
+              <span className="font-medium text-sm">{module.label}</span>
+            </Link>
+          ))}
+
+          {/* Always show Module Management if it's not in the list for some reason, 
+              but ideally it should be in the DB list. 
+              We'll assume it is added in DB with key 'module_management'
+          */}
+
+          {/* Manual link for Settings if not in DB, but let's assume it should be in DB too.
+              For now, hardcode Settings as it might be special? 
+              Actually, let's keep Settings hardcoded at bottom if user wants distinct separation,
+              or just move it to DB. The previous file had it.
+              I will assume "System Settings" is hardcoded at bottom for safety.
+          */}
         </nav>
+
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handleLogout}

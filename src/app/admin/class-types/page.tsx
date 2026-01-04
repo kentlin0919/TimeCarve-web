@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface CourseType {
@@ -17,6 +17,12 @@ export default function CourseTypesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentType, setCurrentType] = useState<Partial<CourseType>>({});
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all"
+  );
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTypes();
@@ -24,6 +30,7 @@ export default function CourseTypesPage() {
 
   const fetchTypes = async () => {
     setLoading(true);
+    setError(null);
     const { data, error } = await supabase
       .from("class_type")
       .select("*")
@@ -31,6 +38,7 @@ export default function CourseTypesPage() {
 
     if (error) {
       console.error("Error fetching types:", error);
+      setError("讀取課程類型失敗，請稍後再試。");
     } else {
       setTypes(data || []);
     }
@@ -39,19 +47,23 @@ export default function CourseTypesPage() {
 
   const handleSave = async () => {
     setError(null);
-    if (!currentType.name || !currentType.label_zh) {
+    const trimmedName = currentType.name?.trim();
+    const trimmedLabel = currentType.label_zh?.trim();
+
+    if (!trimmedName || !trimmedLabel) {
       setError("請填寫所有必填欄位");
       return;
     }
 
     try {
+      setSaving(true);
       if (currentType.id) {
         // Update
         const { error } = await supabase
           .from("class_type")
           .update({
-            name: currentType.name,
-            label_zh: currentType.label_zh,
+            name: trimmedName,
+            label_zh: trimmedLabel,
             is_active: currentType.is_active,
           })
           .eq("id", currentType.id);
@@ -59,8 +71,8 @@ export default function CourseTypesPage() {
       } else {
         // Create
         const { error } = await supabase.from("class_type").insert({
-          name: currentType.name,
-          label_zh: currentType.label_zh,
+          name: trimmedName,
+          label_zh: trimmedLabel,
           is_active: currentType.is_active ?? true,
         });
         if (error) throw error;
@@ -71,7 +83,36 @@ export default function CourseTypesPage() {
       fetchTypes();
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handleToggleActive = async (type: CourseType) => {
+    setUpdatingId(type.id);
+    setError(null);
+    const nextValue = !type.is_active;
+    setTypes((prev) =>
+      prev.map((item) =>
+        item.id === type.id ? { ...item, is_active: nextValue } : item
+      )
+    );
+
+    const { error } = await supabase
+      .from("class_type")
+      .update({ is_active: nextValue })
+      .eq("id", type.id);
+
+    if (error) {
+      console.error("Error updating type:", error);
+      setError("更新狀態失敗，請稍後再試。");
+      setTypes((prev) =>
+        prev.map((item) =>
+          item.id === type.id ? { ...item, is_active: type.is_active } : item
+        )
+      );
+    }
+    setUpdatingId(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -85,24 +126,80 @@ export default function CourseTypesPage() {
     }
   };
 
+  const filteredTypes = useMemo(() => {
+    return types.filter((type) => {
+      const matchesQuery =
+        type.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        type.label_zh.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all"
+          ? true
+          : statusFilter === "active"
+          ? type.is_active
+          : !type.is_active;
+      return matchesQuery && matchesStatus;
+    });
+  }, [types, searchQuery, statusFilter]);
+
+  const activeCount = useMemo(
+    () => types.filter((type) => type.is_active).length,
+    [types]
+  );
+
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          課程類型管理
-        </h1>
-        <button
-          onClick={() => {
-            setCurrentType({ is_active: true });
-            setIsEditing(true);
-            setError(null);
-          }}
-          className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined">add</span>
-          新增類型
-        </button>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            課程類型管理
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            共 {types.length} 筆 • 啟用 {activeCount} 筆
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜尋代碼或名稱"
+              className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as "all" | "active" | "inactive")
+            }
+            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+          >
+            <option value="all">全部狀態</option>
+            <option value="active">啟用中</option>
+            <option value="inactive">已停用</option>
+          </select>
+          <button
+            onClick={() => {
+              setCurrentType({ is_active: true });
+              setIsEditing(true);
+              setError(null);
+            }}
+            className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined">add</span>
+            新增類型
+          </button>
+        </div>
       </div>
+
+      {error && !isEditing && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-left">
@@ -111,24 +208,25 @@ export default function CourseTypesPage() {
               <th className="px-6 py-4">代碼 (Key)</th>
               <th className="px-6 py-4">顯示名稱 (中文)</th>
               <th className="px-6 py-4">狀態</th>
+              <th className="px-6 py-4">建立時間</th>
               <th className="px-6 py-4 text-right">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                   載入中...
                 </td>
               </tr>
-            ) : types.length === 0 ? (
+            ) : filteredTypes.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  尚無資料
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  找不到符合條件的類型
                 </td>
               </tr>
             ) : (
-              types.map((type) => (
+              filteredTypes.map((type) => (
                 <tr
                   key={type.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -150,6 +248,9 @@ export default function CourseTypesPage() {
                       {type.is_active ? "啟用" : "停用"}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    {type.created_at ? new Date(type.created_at).toLocaleString() : "-"}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => {
@@ -160,6 +261,13 @@ export default function CourseTypesPage() {
                       className="text-sky-500 hover:text-sky-600 mr-3"
                     >
                       編輯
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(type)}
+                      className="text-gray-500 hover:text-gray-700 mr-3 disabled:opacity-50"
+                      disabled={updatingId === type.id}
+                    >
+                      {type.is_active ? "停用" : "啟用"}
                     </button>
                     <button
                       onClick={() => handleDelete(type.id)}
@@ -255,9 +363,10 @@ export default function CourseTypesPage() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm shadow-sky-500/30"
+                disabled={saving}
+                className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm shadow-sky-500/30 disabled:opacity-60"
               >
-                儲存
+                {saving ? "儲存中..." : "儲存"}
               </button>
             </div>
           </div>

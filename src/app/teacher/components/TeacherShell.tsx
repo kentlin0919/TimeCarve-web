@@ -2,33 +2,31 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import AppSidebar from "./AppSidebar";
-
-import UserSync from "./UserSync";
+import TeacherSidebar from "./TeacherSidebar";
+import UserSync from "@/components/UserSync";
 import { User } from "@/lib/domain/auth/repository";
 
-export default function AppShell({
+export default function TeacherShell({
   children,
   user,
 }: {
   children: React.ReactNode;
-  user?: User;
+  user: User;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <>
-      {user && <UserSync user={user} />}
-      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white antialiased font-display transition-colors duration-200">
-        {/* Sidebar Component */}
-        <AppSidebar
+      <UserSync user={user} />
+      <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-text-main dark:text-gray-200 font-display overflow-hidden antialiased transition-colors duration-200">
+        <TeacherSidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile Header (Hamburger) - Visible only on mobile */}
-          <header className="md:hidden sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center">
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          {/* Mobile Header */}
+          <header className="lg:hidden w-full bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 py-3 flex justify-between items-center z-10">
             <div className="flex items-center gap-2">
               <div className="relative w-8 h-8">
                 <Image
@@ -50,10 +48,7 @@ export default function AppShell({
             </button>
           </header>
 
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-x-hidden p-0 md:p-0 relative">
-            {children}
-          </main>
+          <main className="flex-1 overflow-hidden relative">{children}</main>
         </div>
       </div>
     </>

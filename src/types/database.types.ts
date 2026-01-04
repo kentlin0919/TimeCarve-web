@@ -483,7 +483,15 @@ export type Database = {
           phone?: string | null
           avatar_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_info_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identity"
+            referencedColumns: ["identity_id"]
+          }
+        ]
       }
       platform_settings: {
         Row: {
@@ -543,8 +551,12 @@ export type Database = {
           id: string
           key: string
           label: string
-          role: "student" | "teacher" | "admin"
+          identity_id: number
           is_active: boolean
+          route: string | null
+          icon: string | null
+          sequence: number
+          badge: string | null
           created_at: string
           updated_at: string
         }
@@ -552,8 +564,12 @@ export type Database = {
           id?: string
           key: string
           label: string
-          role: "student" | "teacher" | "admin"
+          identity_id: number
           is_active?: boolean
+          route?: string | null
+          icon?: string | null
+          sequence?: number
+          badge?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -561,12 +577,24 @@ export type Database = {
           id?: string
           key?: string
           label?: string
-          role?: "student" | "teacher" | "admin"
+          identity_id?: number
           is_active?: boolean
+          route?: string | null
+          icon?: string | null
+          sequence?: number
+          badge?: string | null
           created_at?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "system_modules_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identity"
+            referencedColumns: ["identity_id"]
+          }
+        ]
       }
       course_tags: {
         Row: {

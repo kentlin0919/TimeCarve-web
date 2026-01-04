@@ -1,43 +1,66 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import AdminShell from "./components/AdminShell";
+import { User } from "@/lib/domain/auth/repository";
 
-import AuthGuard from "@/components/AuthGuard";
-import Link from "next/link";
-import AdminSidebar from "./components/AdminSidebar";
-
-import { useState } from "react";
-
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const supabase = await createClient();
 
-  return (
-    <AuthGuard>
-      <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex transition-colors duration-300">
-        {/* Sidebar Components */}
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+  const {
+    data: { user: authUser },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-        {/* Mobile Header */}
-        <header className="lg:hidden fixed w-full z-30 top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">Admin</h1>
-          <button
-            className="text-gray-500 dark:text-gray-400"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-        </header>
+  if (authError || !authUser) {
+    redirect("/auth/login?redirect=/admin/dashboard");
+  }
 
-        {/* Main Content */}
-        <main className="flex-1 lg:ml-64 p-6 lg:p-10 pt-20 lg:pt-10 overflow-x-hidden">
-          {children}
-        </main>
-      </div>
-    </AuthGuard>
-  );
+  // Fetch user_info for role/identity checking
+  const { data: userInfo, error: userInfoError } = await supabase
+    .from("user_info")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+
+  if (userInfoError || !userInfo) {
+    // If no user info, something is wrong with the account setup
+    console.warn("User has no user_info:", userInfoError);
+    // Maybe redirect to an onboarding or error page? For now login.
+    redirect("/auth/login");
+  }
+
+  // Map to Domain User
+  // Map to Domain User
+  const user: User = {
+    id: authUser.id,
+    email: authUser.email!,
+    role: authUser.role,
+    emailConfirmedAt: authUser.email_confirmed_at,
+    name: userInfo.name || authUser.user_metadata?.name || "",
+    identityId: userInfo.identity_id ?? undefined,
+    isActive: userInfo.is_active ?? true,
+    // isFirstLogin is not in user_info schema currently
+    avatarUrl: userInfo.avatar_url ?? undefined,
+    phone: userInfo.phone ?? undefined,
+    disabledAt: userInfo.disabled_at ?? undefined,
+    disabledReason: userInfo.disabled_reason ?? undefined,
+  };
+
+  // Strictly check for Admin Identity (ID: 1)
+  if (user.identityId !== 1) {
+    // Not an admin
+    if (user.identityId === 2) {
+      redirect("/teacher/dashboard");
+    } else if (user.identityId === 3) {
+      redirect("/student/dashboard");
+    } else {
+      redirect("/");
+    }
+  }
+
+  return <AdminShell user={user}>{children}</AdminShell>;
 }

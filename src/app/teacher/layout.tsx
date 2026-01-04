@@ -1,52 +1,61 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import TeacherShell from "./components/TeacherShell";
+import { User } from "@/lib/domain/auth/repository";
 
-import { useState } from "react";
-import Image from "next/image";
-import AuthGuard from "@/components/AuthGuard";
-import TeacherSidebar from "./components/TeacherSidebar";
-
-export default function TeacherLayout({
+export default async function TeacherLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const supabase = await createClient();
 
-  return (
-    <AuthGuard>
-      <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-text-main dark:text-gray-200 font-display overflow-hidden antialiased transition-colors duration-200">
-        <TeacherSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+  const {
+    data: { user: authUser },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-          {/* Mobile Header */}
-          <header className="lg:hidden w-full bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 py-3 flex justify-between items-center z-10">
-            <div className="flex items-center gap-2">
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/logo.svg"
-                  alt="TimeCarve Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <span className="font-bold text-slate-800 dark:text-white">
-                TimeCarve 刻時
-              </span>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-            >
-              <span className="material-symbols-outlined">menu</span>
-            </button>
-          </header>
+  if (authError || !authUser) {
+    redirect("/auth/login?redirect=/teacher/dashboard");
+  }
 
-          <main className="flex-1 overflow-hidden relative">{children}</main>
-        </div>
-      </div>
-    </AuthGuard>
-  );
+  // Fetch user_info
+  const { data: userInfo, error: userInfoError } = await supabase
+    .from("user_info")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+
+  if (userInfoError || !userInfo) {
+    redirect("/auth/login");
+  }
+
+  // Map to Domain User
+  const user: User = {
+    id: authUser.id,
+    email: authUser.email!,
+    role: authUser.role,
+    emailConfirmedAt: authUser.email_confirmed_at,
+    name: userInfo.name || authUser.user_metadata?.name || "",
+    identityId: userInfo.identity_id ?? undefined,
+    isActive: userInfo.is_active ?? true,
+    // isFirstLogin is not in user_info schema currently
+    avatarUrl: userInfo.avatar_url ?? undefined,
+    phone: userInfo.phone ?? undefined,
+    disabledAt: userInfo.disabled_at ?? undefined,
+    disabledReason: userInfo.disabled_reason ?? undefined,
+  };
+
+  // Strictly check for Teacher Identity (ID: 2)
+  if (user.identityId !== 2) {
+    if (user.identityId === 1) {
+      redirect("/admin/dashboard");
+    } else if (user.identityId === 3) {
+      redirect("/student/dashboard");
+    } else {
+      redirect("/");
+    }
+  }
+
+  return <TeacherShell user={user}>{children}</TeacherShell>;
 }
