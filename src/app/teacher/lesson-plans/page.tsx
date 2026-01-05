@@ -1,7 +1,3 @@
-'use client';
-
-import React, { useState } from 'react';
-
 // Mock Data
 type LessonPlan = {
   id: string;
@@ -12,6 +8,7 @@ type LessonPlan = {
   lastUpdated: string;
   status: 'active' | 'draft';
   content: string;
+  expectedLearningOutcomes?: string[];
 };
 
 const MOCK_PLANS: LessonPlan[] = [
@@ -23,7 +20,12 @@ const MOCK_PLANS: LessonPlan[] = [
     duration: '4小時',
     lastUpdated: '2023-11-01',
     status: 'active',
-    content: '介紹各種雕刻刀的用途，以及正確的施力方式避免受傷...'
+    content: '介紹各種雕刻刀的用途，以及正確的施力方式避免受傷...',
+    expectedLearningOutcomes: [
+      '能正確識別五種常用雕刻刀',
+      '掌握三種基本的持刀手勢',
+      '能安全地進行基礎蠟塊切削'
+    ]
   },
   {
     id: 'lp2',
@@ -33,7 +35,12 @@ const MOCK_PLANS: LessonPlan[] = [
     duration: '6小時',
     lastUpdated: '2023-10-15',
     status: 'active',
-    content: '詳細解說中切牙的三個主要發育葉與舌側隆起...'
+    content: '詳細解說中切牙的三個主要發育葉與舌側隆起...',
+    expectedLearningOutcomes: [
+      '能繪製上顎中切牙的五面觀',
+      '準確雕刻出舌側窩與邊緣脊',
+      '區分左右側中切牙的形態差異'
+    ]
   },
   {
     id: 'lp3',
@@ -43,7 +50,11 @@ const MOCK_PLANS: LessonPlan[] = [
     duration: '8小時',
     lastUpdated: '2023-09-20',
     status: 'draft',
-    content: '針對美觀區的排牙技巧，包括微笑曲線設定...'
+    content: '針對美觀區的排牙技巧，包括微笑曲線設定...',
+    expectedLearningOutcomes: [
+      '理解微笑曲線與牙齒排列的關係',
+      '能根據患者臉型選擇合適的前牙模具'
+    ]
   }
 ];
 
@@ -52,18 +63,21 @@ export default function LessonPlansPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<LessonPlan>>({});
+  const [newOutcome, setNewOutcome] = useState('');
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
 
   const handleSelect = (id: string) => {
     setSelectedPlanId(id);
     setIsEditing(false);
+    setNewOutcome('');
   };
 
   const handleEdit = () => {
     if (selectedPlan) {
       setEditForm({ ...selectedPlan });
       setIsEditing(true);
+      setNewOutcome('');
     }
   };
 
@@ -83,12 +97,41 @@ export default function LessonPlansPage() {
       duration: '',
       lastUpdated: new Date().toISOString().split('T')[0],
       status: 'draft',
-      content: ''
+      content: '',
+      expectedLearningOutcomes: []
     };
     setPlans([newPlan, ...plans]);
     setSelectedPlanId(newPlan.id);
     setEditForm(newPlan);
     setIsEditing(true);
+    setNewOutcome('');
+  };
+
+  const handleAddOutcome = () => {
+    if (!newOutcome.trim()) return;
+    const currentOutcomes = editForm.expectedLearningOutcomes || [];
+    setEditForm({
+      ...editForm,
+      expectedLearningOutcomes: [...currentOutcomes, newOutcome.trim()]
+    });
+    setNewOutcome('');
+  };
+
+  const handleRemoveOutcome = (index: number) => {
+    const currentOutcomes = editForm.expectedLearningOutcomes || [];
+    setEditForm({
+      ...editForm,
+      expectedLearningOutcomes: currentOutcomes.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleUpdateOutcome = (index: number, value: string) => {
+    const currentOutcomes = [...(editForm.expectedLearningOutcomes || [])];
+    currentOutcomes[index] = value;
+    setEditForm({
+      ...editForm,
+      expectedLearningOutcomes: currentOutcomes
+    });
   };
 
   return (
@@ -153,7 +196,7 @@ export default function LessonPlansPage() {
                       <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary-dark shadow-sm">儲存</button>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
                      <div>
                        <label className="block text-sm font-medium mb-1">教案標題</label>
                        <input 
@@ -185,6 +228,54 @@ export default function LessonPlansPage() {
                           </select>
                         </div>
                      </div>
+                     
+                     {/* Expected Learning Outcomes */}
+                     <div>
+                       <label className="block text-sm font-medium mb-2">預期學習成果</label>
+                       <div className="space-y-3">
+                         {(editForm.expectedLearningOutcomes || []).map((outcome, index) => (
+                           <div key={index} className="flex items-center gap-2 group">
+                             <span className="text-slate-400 font-mono text-sm w-4">{index + 1}.</span>
+                             <input 
+                               className="flex-1 px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-sm"
+                               value={outcome}
+                               onChange={e => handleUpdateOutcome(index, e.target.value)}
+                             />
+                             <button 
+                               onClick={() => handleRemoveOutcome(index)}
+                               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                               title="移除"
+                             >
+                               <span className="material-symbols-outlined text-lg">delete</span>
+                             </button>
+                           </div>
+                         ))}
+                         
+                         <div className="flex items-center gap-2 pl-6">
+                           <input 
+                             className="flex-1 px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-sm border-dashed focus:border-solid"
+                             placeholder="輸入新的學習成果項目..."
+                             value={newOutcome}
+                             onChange={e => setNewOutcome(e.target.value)}
+                             onKeyDown={e => {
+                               if (e.key === 'Enter') {
+                                 e.preventDefault();
+                                 handleAddOutcome();
+                               }
+                             }}
+                           />
+                           <button 
+                             onClick={handleAddOutcome}
+                             disabled={!newOutcome.trim()}
+                             className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                             title="新增"
+                           >
+                             <span className="material-symbols-outlined text-lg">add</span>
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+
                      <div>
                        <label className="block text-sm font-medium mb-1">內容重點</label>
                        <textarea 
@@ -232,7 +323,25 @@ export default function LessonPlansPage() {
                       <span>編輯</span>
                     </button>
                  </div>
-                 <div className="flex-1 p-8 overflow-y-auto">
+                 <div className="flex-1 p-8 overflow-y-auto space-y-8">
+                    {/* Expected Learning Outcomes Display */}
+                    {selectedPlan.expectedLearningOutcomes && selectedPlan.expectedLearningOutcomes.length > 0 && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 border border-border-light dark:border-border-dark">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary">check_circle</span>
+                          預期學習成果
+                        </h3>
+                        <ul className="space-y-3">
+                          {selectedPlan.expectedLearningOutcomes.map((outcome, index) => (
+                            <li key={index} className="flex gap-3 text-slate-700 dark:text-slate-300">
+                              <span className="font-bold text-primary/50 text-sm mt-0.5">{String(index + 1).padStart(2, '0')}.</span>
+                              <span>{outcome}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     <div className="prose dark:prose-invert max-w-none">
                        <h3>內容重點</h3>
                        <p>{selectedPlan.content || '暫無內容'}</p>

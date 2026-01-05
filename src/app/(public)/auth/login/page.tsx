@@ -40,6 +40,60 @@ function LoginContent() {
   // Tab State
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
+  const defaultHero = {
+    imageUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBHhqJqS-VgLptXAcCrNziettbp0-KH-cAC-oY7-qxcwZYspiupMFZMYTZmQSJqGYokazzYf31feFqozjVqQF5HyHuvKkZGz64lFzSWHrbd5eSVqsgr25QOyYUyD0QmGQ68tOAX8JZeAFTu72ATHh7m-IF1bgfrMZBT5moP5QMWBSoWQVf4HJYudJAFQCKV6GS2gLZIw7EVw-bFeQ1EAfPoglVwm-NI69IRGWk7vQmqDnv-qp6kGs1pYiMiyOzxQHuaWhsmcU1SjQE",
+    titleLine1: "精選課程",
+    titleLine2: "成就非凡實力",
+    subtitle:
+      "專為學員量身打造的專業家教課程，在舒適的環境中，開始您的學習之旅。",
+  };
+
+  const [heroImageUrl, setHeroImageUrl] = useState(defaultHero.imageUrl);
+  const [heroTitleLine1, setHeroTitleLine1] = useState(defaultHero.titleLine1);
+  const [heroTitleLine2, setHeroTitleLine2] = useState(defaultHero.titleLine2);
+  const [heroSubtitle, setHeroSubtitle] = useState(defaultHero.subtitle);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadHeroSettings = async () => {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("key, value")
+        .in("key", [
+          "login_hero_image_url",
+          "login_hero_title_line1",
+          "login_hero_title_line2",
+          "login_hero_subtitle",
+        ]);
+
+      if (error) {
+        console.error("Error loading login hero settings:", error);
+        return;
+      }
+
+      if (!isMounted) return;
+
+      const map = new Map(
+        (data || []).map((item) => [item.key, item.value])
+      );
+      const pick = (key: string, fallback: string) => {
+        const value = map.get(key);
+        return value && value.trim() ? value : fallback;
+      };
+
+      setHeroImageUrl(pick("login_hero_image_url", defaultHero.imageUrl));
+      setHeroTitleLine1(pick("login_hero_title_line1", defaultHero.titleLine1));
+      setHeroTitleLine2(pick("login_hero_title_line2", defaultHero.titleLine2));
+      setHeroSubtitle(pick("login_hero_subtitle", defaultHero.subtitle));
+    };
+
+    loadHeroSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -294,8 +348,7 @@ function LoginContent() {
           <div
             className="hidden md:flex flex-col justify-between w-1/2 bg-cover bg-center relative p-12 text-white"
             style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBHhqJqS-VgLptXAcCrNziettbp0-KH-cAC-oY7-qxcwZYspiupMFZMYTZmQSJqGYokazzYf31feFqozjVqQF5HyHuvKkZGz64lFzSWHrbd5eSVqsgr25QOyYUyD0QmGQ68tOAX8JZeAFTu72ATHh7m-IF1bgfrMZBT5moP5QMWBSoWQVf4HJYudJAFQCKV6GS2gLZIw7EVw-bFeQ1EAfPoglVwm-NI69IRGWk7vQmqDnv-qp6kGs1pYiMiyOzxQHuaWhsmcU1SjQE")',
+              backgroundImage: `url("${heroImageUrl}")`,
             }}
           >
             <div className="absolute inset-0 bg-primary/80 mix-blend-multiply opacity-90 dark:opacity-80"></div>
@@ -308,12 +361,12 @@ function LoginContent() {
                   </span>
                 </div>
                 <h2 className="text-4xl font-bold mb-4 leading-tight tracking-tight">
-                  精選課程
+                  {heroTitleLine1}
                   <br />
-                  成就非凡實力
+                  {heroTitleLine2}
                 </h2>
                 <p className="text-lg text-white/90 leading-relaxed">
-                  專為學員量身打造的專業家教課程，在舒適的環境中，開始您的學習之旅。
+                  {heroSubtitle}
                 </p>
               </div>
               <div className="mt-auto space-y-6">

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useModal } from "@/components/providers/ModalContext";
 
 import { Course, CourseSection } from "@/lib/domain/course/entity";
@@ -9,6 +11,7 @@ import { SupabaseAuthRepository } from "@/lib/infrastructure/auth/SupabaseAuthRe
 import CourseDetailForm from "./CourseDetailForm";
 
 export default function TeacherCoursesPage() {
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -266,6 +269,7 @@ export default function TeacherCoursesPage() {
                     const isSelected = selectedCourseId === course.id;
                     const isActive = course.status === "active";
                     const updatedAt = formatDateTime(course.updatedAt);
+                    const thumbnailUrl = course.imageUrl?.trim();
 
                     return (
                       <div
@@ -278,21 +282,32 @@ export default function TeacherCoursesPage() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`size-12 rounded-lg bg-${
-                              course.iconColor || "blue"
-                            }-100 dark:bg-${
-                              course.iconColor || "blue"
-                            }-900/30 text-${
-                              course.iconColor || "blue"
-                            }-600 dark:text-${
-                              course.iconColor || "blue"
-                            }-400 flex items-center justify-center flex-shrink-0 shadow-sm`}
-                          >
-                            <span className="material-symbols-outlined">
-                              {course.icon || "school"}
-                            </span>
-                          </div>
+                          {thumbnailUrl ? (
+                            <div className="relative size-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0 shadow-sm">
+                              <Image
+                                src={thumbnailUrl}
+                                alt={`${course.title} 封面`}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className={`size-12 rounded-lg bg-${
+                                course.iconColor || "blue"
+                              }-100 dark:bg-${
+                                course.iconColor || "blue"
+                              }-900/30 text-${
+                                course.iconColor || "blue"
+                              }-600 dark:text-${
+                                course.iconColor || "blue"
+                              }-400 flex items-center justify-center flex-shrink-0 shadow-sm`}
+                            >
+                              <span className="material-symbols-outlined">
+                                {course.icon || "school"}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
                               <h4 className="text-sm font-bold text-slate-800 dark:text-white truncate pr-2">
@@ -642,7 +657,12 @@ export default function TeacherCoursesPage() {
                         </div>
 
                         <div className="pt-4 mt-4 border-t border-border-light dark:border-border-dark">
-                          <button className="w-full p-4 rounded-xl border border-dashed border-border-light dark:border-border-dark flex items-center justify-center gap-2 text-primary hover:bg-primary/5 transition-colors">
+                          <button
+                            onClick={() =>
+                              router.push(`/teacher/courses/preview/${selectedCourse.id}`)
+                            }
+                            className="w-full p-4 rounded-xl border border-dashed border-border-light dark:border-border-dark flex items-center justify-center gap-2 text-primary hover:bg-primary/5 transition-colors"
+                          >
                             <span className="material-symbols-outlined">
                               visibility
                             </span>

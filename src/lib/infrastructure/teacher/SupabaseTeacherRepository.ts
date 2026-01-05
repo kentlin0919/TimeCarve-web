@@ -1,9 +1,14 @@
-import { supabase } from "@/lib/supabase";
+import { supabase as defaultClient } from "@/lib/supabase";
 import { TeacherRepository } from "@/lib/domain/teacher/repository";
 import { TeacherProfile, TeacherEducation } from "@/lib/domain/teacher/entity";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export class SupabaseTeacherRepository implements TeacherRepository {
-  private supabase = supabase;
+  private supabase: SupabaseClient;
+
+  constructor(client?: SupabaseClient) {
+    this.supabase = client || defaultClient;
+  }
 
   async getProfile(userId: string): Promise<TeacherProfile | null> {
     try {

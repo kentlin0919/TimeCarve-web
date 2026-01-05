@@ -34,6 +34,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          booking_date: string
+          course_id: string
+          created_at: string
+          end_time: string
+          id: string
+          notes: string | null
+          start_time: string
+          status: string
+          student_id: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_date: string
+          course_id: string
+          created_at?: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          start_time: string
+          status?: string
+          student_id: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_date?: string
+          course_id?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          start_time?: string
+          status?: string
+          student_id?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_type: {
         Row: {
           class_type_id: number
@@ -131,7 +195,9 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration_minutes: number
+          expected_learning_outcomes: string[] | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           location: string | null
           price: number | null
@@ -146,7 +212,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number
+          expected_learning_outcomes?: string[] | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           location?: string | null
           price?: number | null
@@ -161,7 +229,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number
+          expected_learning_outcomes?: string[] | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           location?: string | null
           price?: number | null
@@ -442,6 +512,85 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "tags_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_availability_overrides: {
+        Row: {
+          created_at: string
+          date: string
+          end_time: string | null
+          id: string
+          is_unavailable: boolean | null
+          start_time: string | null
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          end_time?: string | null
+          id?: string
+          is_unavailable?: boolean | null
+          start_time?: string | null
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          end_time?: string | null
+          id?: string
+          is_unavailable?: boolean | null
+          start_time?: string | null
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_availability_overrides_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_availability_weekly: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          start_time: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          start_time: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_availability_weekly_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teacher_info"

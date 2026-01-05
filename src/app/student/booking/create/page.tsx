@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useModal } from "@/components/providers/ModalContext";
 import { useStudentCourseDetail } from "../../courses/useStudentTeacherCourses";
-import { supabase } from "@/lib/supabase";
+import { getAvailableSlots, createBooking } from "@/app/actions/booking";
 
 // Helper to get days in month
 const getDaysInMonth = (year: number, month: number) => {
@@ -15,11 +15,6 @@ const getDaysInMonth = (year: number, month: number) => {
 // Helper to get first day of month (0 = Sunday)
 const getFirstDayOfMonth = (year: number, month: number) => {
   return new Date(year, month, 1).getDay();
-};
-
-const TIME_SLOTS = {
-  morning: ["09:00", "10:00", "11:00"],
-  afternoon: ["13:00", "14:00", "15:00", "16:00", "17:00"],
 };
 
 export default function StudentBookingCreatePage() {
@@ -38,12 +33,42 @@ export default function StudentBookingCreatePage() {
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<
+    { startTime: string; endTime: string }[]
+  >([]);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const { course, context, loading, error } = useStudentCourseDetail(courseId);
 
   useEffect(() => {
     setHours(Math.max(1, hoursParam));
   }, [hoursParam]);
+
+  useEffect(() => {
+    async function fetchSlots() {
+      if (selectedDate && context?.teacherId && course?.durationMinutes) {
+        setIsFetchingSlots(true);
+        setSelectedTime(null);
+        try {
+          const slots = await getAvailableSlots(
+            context.teacherId,
+            selectedDate,
+            selectedDate,
+            course.durationMinutes
+          );
+          setAvailableSlots(slots);
+        } catch (error) {
+          console.error("Failed to fetch slots", error);
+          setAvailableSlots([]);
+        } finally {
+          setIsFetchingSlots(false);
+        }
+      } else {
+        setAvailableSlots([]);
+      }
+    }
+    fetchSlots();
+  }, [selectedDate, context?.teacherId, course?.durationMinutes]);
 
   // Calendar calculations
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -163,18 +188,15 @@ export default function StudentBookingCreatePage() {
 
     setSubmitting(true);
     try {
-      const { error: insertError } = await supabase.from("bookings").insert({
-        student_id: context.studentId,
-        course_id: course.id,
-        teacher_id: context.teacherId,
-        booking_date: dateStr,
-        start_time: selectedTime,
-        end_time: endTime,
-        status: "pending",
+      await createBooking({
+        studentId: context.studentId,
+        courseId: course.id,
+        teacherId: context.teacherId,
+        bookingDate: dateStr,
+        startTime: selectedTime,
+        endTime: endTime,
         notes: notes.trim() || null,
       });
-
-      if (insertError) throw insertError;
 
       showModal({
         title: "預約已送出",
@@ -434,58 +456,128 @@ export default function StudentBookingCreatePage() {
                 </div>
               ) : (
                 <>
-                  {/* Morning */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-amber-500 text-[20px]">
-                        wb_sunny
-                      </span>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        上午時段
-                      </span>
+                  {isFetchingSlots ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {TIME_SLOTS.morning.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => handleTimeClick(time)}
-                          className={`border rounded-xl p-3 text-sm font-medium transition-all duration-200 ${
-                            selectedTime === time
-                              ? "border-primary bg-primary text-white shadow-lg shadow-primary/30"
-                              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:bg-primary/5"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
+                  ) : availableSlots.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <p>該日期無可用時段，請選擇其他日期。</p>
                     </div>
-                  </div>
-                  {/* Afternoon */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-orange-500 text-[20px]">
-                        sunny
-                      </span>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        下午時段
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {TIME_SLOTS.afternoon.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => handleTimeClick(time)}
-                          className={`border rounded-xl p-3 text-sm font-medium transition-all duration-200 ${
-                            selectedTime === time
-                              ? "border-primary bg-primary text-white shadow-lg shadow-primary/30"
-                              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:bg-primary/5"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Morning */}
+                      {availableSlots.some(
+                        (s) => parseInt(s.startTime) < 12
+                      ) && (
+                        <div className="mb-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-amber-500 text-[20px]">
+                              wb_sunny
+                            </span>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                              上午時段
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {availableSlots
+                              .filter((s) => parseInt(s.startTime) < 12)
+                              .map((slot) => (
+                                <button
+                                  key={slot.startTime}
+                                  onClick={() =>
+                                    handleTimeClick(slot.startTime)
+                                  }
+                                  className={`border rounded-xl p-3 text-sm font-medium transition-all duration-200 ${
+                                    selectedTime === slot.startTime
+                                      ? "border-primary bg-primary text-white shadow-lg shadow-primary/30"
+                                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:bg-primary/5"
+                                  }`}
+                                >
+                                  {slot.startTime}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Afternoon */}
+                      {availableSlots.some(
+                        (s) =>
+                          parseInt(s.startTime) >= 12 &&
+                          parseInt(s.startTime) < 18
+                      ) && (
+                        <div className="mb-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-orange-500 text-[20px]">
+                              sunny
+                            </span>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                              下午時段
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {availableSlots
+                              .filter(
+                                (s) =>
+                                  parseInt(s.startTime) >= 12 &&
+                                  parseInt(s.startTime) < 18
+                              )
+                              .map((slot) => (
+                                <button
+                                  key={slot.startTime}
+                                  onClick={() =>
+                                    handleTimeClick(slot.startTime)
+                                  }
+                                  className={`border rounded-xl p-3 text-sm font-medium transition-all duration-200 ${
+                                    selectedTime === slot.startTime
+                                      ? "border-primary bg-primary text-white shadow-lg shadow-primary/30"
+                                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:bg-primary/5"
+                                  }`}
+                                >
+                                  {slot.startTime}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Evening */}
+                      {availableSlots.some(
+                        (s) => parseInt(s.startTime) >= 18
+                      ) && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-indigo-500 text-[20px]">
+                              nights_stay
+                            </span>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                              晚上時段
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {availableSlots
+                              .filter((s) => parseInt(s.startTime) >= 18)
+                              .map((slot) => (
+                                <button
+                                  key={slot.startTime}
+                                  onClick={() =>
+                                    handleTimeClick(slot.startTime)
+                                  }
+                                  className={`border rounded-xl p-3 text-sm font-medium transition-all duration-200 ${
+                                    selectedTime === slot.startTime
+                                      ? "border-primary bg-primary text-white shadow-lg shadow-primary/30"
+                                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:bg-primary/5"
+                                  }`}
+                                >
+                                  {slot.startTime}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               )}
             </div>

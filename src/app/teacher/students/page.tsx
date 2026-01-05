@@ -62,9 +62,6 @@ export default function TeacherStudentManagementPage() {
 
       if (studentsData) {
         setStudents(studentsData as unknown as StudentWithInfo[]);
-        if (studentsData.length > 0 && !selectedStudentId) {
-          setSelectedStudentId(studentsData[0].id);
-        }
       }
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -200,9 +197,13 @@ export default function TeacherStudentManagementPage() {
           </div>
 
           {/* Two-Column Layout */}
-          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-280px)] min-h-[600px]">
+          <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-240px)] lg:h-[calc(100vh-280px)] min-h-[500px]">
             {/* Left ListView */}
-            <div className="lg:w-1/3 flex flex-col bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-card overflow-hidden">
+            <div
+              className={`lg:w-1/3 flex-col bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-card overflow-hidden ${
+                selectedStudentId ? "hidden lg:flex" : "flex"
+              }`}
+            >
               <div className="p-4 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                 <div className="flex items-center gap-2">
                   <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white border border-border-light dark:border-border-dark">
@@ -262,6 +263,9 @@ export default function TeacherStudentManagementPage() {
                               {userInfo.email}
                             </p>
                           </div>
+                          <span className="material-symbols-outlined text-slate-400 lg:hidden">
+                            chevron_right
+                          </span>
                         </div>
                       </div>
                     );
@@ -271,13 +275,25 @@ export default function TeacherStudentManagementPage() {
             </div>
 
             {/* Right Panel - View or Edit */}
-            <div className="lg:w-2/3 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-card flex flex-col overflow-hidden">
+            <div
+              className={`lg:w-2/3 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-card flex-col overflow-hidden ${
+                selectedStudentId ? "flex" : "hidden lg:flex"
+              }`}
+            >
               {selectedStudent && selectedStudent.user_info ? (
                 isEditing ? (
                   // ========== EDIT MODE ==========
                   <div className="flex flex-col h-full overflow-hidden">
                     {/* Edit Header */}
-                    <div className="p-6 border-b border-border-light dark:border-border-dark bg-slate-50/30 dark:bg-slate-800/30 flex items-center gap-3">
+                    <div className="p-4 md:p-6 border-b border-border-light dark:border-border-dark bg-slate-50/30 dark:bg-slate-800/30 flex items-center gap-3">
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="lg:hidden mr-1 p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                      >
+                        <span className="material-symbols-outlined">
+                          arrow_back
+                        </span>
+                      </button>
                       <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
                         <span className="material-symbols-outlined">
                           person_edit
@@ -289,7 +305,7 @@ export default function TeacherStudentManagementPage() {
                     </div>
 
                     {/* Edit Content - Two Column Layout */}
-                    <div className="flex-1 overflow-y-auto p-6">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6">
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         {/* Left Column - Profile Card */}
                         <div className="lg:col-span-4 flex flex-col gap-6">
@@ -492,17 +508,17 @@ export default function TeacherStudentManagementPage() {
                     </div>
 
                     {/* Edit Footer */}
-                    <div className="flex items-center justify-between p-5 border-t border-border-light dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="flex flex-col-reverse md:flex-row items-center justify-between p-4 md:p-5 border-t border-border-light dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/50 gap-4">
                       <button
                         onClick={() => setIsEditing(false)}
-                        className="px-5 py-2 rounded-lg border border-border-light dark:border-border-dark text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium text-sm flex items-center gap-2"
+                        className="w-full md:w-auto px-5 py-2 rounded-lg border border-border-light dark:border-border-dark text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           close
                         </span>
                         取消
                       </button>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                         <span className="hidden md:flex text-xs text-text-sub items-center gap-1 bg-blue-50 dark:bg-blue-900/10 px-3 py-1.5 rounded-full text-blue-600 dark:text-blue-400">
                           <span className="material-symbols-outlined text-sm">
                             auto_fix_high
@@ -512,7 +528,7 @@ export default function TeacherStudentManagementPage() {
                         <button
                           onClick={handleSave}
                           disabled={saving}
-                          className="px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full md:w-auto px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {saving ? (
                             "儲存中..."
@@ -531,77 +547,97 @@ export default function TeacherStudentManagementPage() {
                 ) : (
                   // ========== VIEW MODE ==========
                   <>
-                    <div className="p-6 border-b border-border-light dark:border-border-dark bg-slate-50/30 dark:bg-slate-800/30">
-                      <div className="flex justify-between items-start">
-                        <div className="flex gap-4">
-                          {selectedStudent.user_info.avatar_url ? (
-                            <div
-                              className="size-24 rounded-2xl bg-slate-200 dark:bg-slate-700 bg-center bg-cover shadow-sm"
-                              style={{
-                                backgroundImage: `url("${selectedStudent.user_info.avatar_url}")`,
-                              }}
-                            ></div>
-                          ) : (
-                            <div className="size-24 rounded-2xl bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-4xl shadow-sm">
-                              {getAvatarChar(selectedStudent.user_info.name)}
-                            </div>
-                          )}
-
-                          <div className="flex flex-col gap-1.5 justify-center">
-                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                              {selectedStudent.user_info.name}
-                              {selectedStudent.user_info.is_active && (
-                                <span
-                                  className="material-symbols-outlined text-green-500 fill-current text-xl"
-                                  title="已驗證"
-                                >
-                                  verified
-                                </span>
-                              )}
-                            </h2>
-                            <p className="text-text-sub text-sm flex items-center gap-3">
-                              <span className="flex items-center gap-1.5">
-                                <span className="material-symbols-outlined text-sm">
-                                  mail
-                                </span>{" "}
-                                {selectedStudent.user_info.email}
+                    <div className="p-4 md:p-6 border-b border-border-light dark:border-border-dark bg-slate-50/30 dark:bg-slate-800/30">
+                      <div className="flex flex-col gap-4">
+                        {/* Mobile Back Button & Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2 w-full">
+                            <button
+                              onClick={() => setSelectedStudentId(null)}
+                              className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            >
+                              <span className="material-symbols-outlined">
+                                arrow_back
                               </span>
-                              {selectedStudent.user_info.phone && (
-                                <>
-                                  <span className="text-gray-300 dark:text-gray-600">
-                                    |
-                                  </span>
-                                  <span className="flex items-center gap-1.5">
-                                    <span className="material-symbols-outlined text-sm">
-                                      call
-                                    </span>{" "}
-                                    {selectedStudent.user_info.phone}
-                                  </span>
-                                </>
+                            </button>
+                            <div className="flex gap-3 md:gap-4 flex-1 min-w-0">
+                              {selectedStudent.user_info.avatar_url ? (
+                                <div
+                                  className="size-16 md:size-24 rounded-2xl bg-slate-200 dark:bg-slate-700 bg-center bg-cover shadow-sm shrink-0"
+                                  style={{
+                                    backgroundImage: `url("${selectedStudent.user_info.avatar_url}")`,
+                                  }}
+                                ></div>
+                              ) : (
+                                <div className="size-16 md:size-24 rounded-2xl bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-2xl md:text-4xl shadow-sm shrink-0">
+                                  {getAvatarChar(
+                                    selectedStudent.user_info.name
+                                  )}
+                                </div>
                               )}
-                            </p>
-                            <p className="text-xs text-text-sub mt-1">
-                              加入時間:{" "}
-                              {selectedStudent.created_at
-                                ? new Date(
-                                    selectedStudent.created_at
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </p>
+
+                              <div className="flex flex-col gap-1 justify-center min-w-0 flex-1">
+                                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 truncate">
+                                  <span className="truncate">
+                                    {selectedStudent.user_info.name}
+                                  </span>
+                                  {selectedStudent.user_info.is_active && (
+                                    <span
+                                      className="material-symbols-outlined text-green-500 fill-current text-lg md:text-xl shrink-0"
+                                      title="已驗證"
+                                    >
+                                      verified
+                                    </span>
+                                  )}
+                                </h2>
+                                <div className="text-text-sub text-sm flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                                  <span className="flex items-center gap-1.5 truncate">
+                                    <span className="material-symbols-outlined text-sm shrink-0">
+                                      mail
+                                    </span>{" "}
+                                    <span className="truncate">
+                                      {selectedStudent.user_info.email}
+                                    </span>
+                                  </span>
+                                  {selectedStudent.user_info.phone && (
+                                    <span className="flex items-center gap-1.5 truncate">
+                                      <span className="hidden md:inline text-gray-300 dark:text-gray-600">
+                                        |
+                                      </span>
+                                      <span className="material-symbols-outlined text-sm shrink-0">
+                                        call
+                                      </span>{" "}
+                                      {selectedStudent.user_info.phone}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-text-sub mt-1 hidden md:block">
+                                  加入時間:{" "}
+                                  {selectedStudent.created_at
+                                    ? new Date(
+                                        selectedStudent.created_at
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-3">
+
+                        {/* Actions Toolbar */}
+                        <div className="flex gap-2 md:gap-3 justify-end border-t md:border-t-0 border-slate-200 dark:border-slate-700 pt-4 md:pt-0">
                           <button
-                            className="flex items-center justify-center size-10 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-sub hover:text-primary hover:border-primary transition-colors shadow-sm"
+                            className="flex-1 md:flex-none flex items-center justify-center h-10 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-sub hover:text-primary hover:border-primary transition-colors shadow-sm gap-2"
                             title="傳送訊息"
                           >
                             <span className="material-symbols-outlined text-[20px]">
                               chat
                             </span>
+                            <span className="md:hidden text-sm">訊息</span>
                           </button>
                           <button
                             onClick={handleEditClick}
-                            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all active:scale-95 flex items-center gap-2"
+                            className="flex-1 md:flex-none px-4 h-10 rounded-lg bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                           >
                             <span className="material-symbols-outlined text-[20px]">
                               edit_square
@@ -628,11 +664,14 @@ export default function TeacherStudentManagementPage() {
                   </>
                 )
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <span className="material-symbols-outlined text-6xl mb-4">
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                  <span className="material-symbols-outlined text-6xl mb-4 text-slate-300">
                     person_search
                   </span>
-                  <p>請選擇一位學生以查看詳情</p>
+                  <p className="text-lg font-medium text-slate-600 dark:text-slate-300">
+                    請選擇一位學生
+                  </p>
+                  <p className="text-sm mt-1">點擊左側列表以查看詳細資訊</p>
                 </div>
               )}
             </div>
