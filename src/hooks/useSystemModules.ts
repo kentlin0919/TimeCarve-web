@@ -8,7 +8,8 @@ export function useSystemModules() {
     initialized,
     init,
     getModuleByRoute,
-    getModulesByIdentity 
+    getModulesByIdentity,
+    updateModule 
   } = useSystemStore();
 
   useEffect(() => {
@@ -30,5 +31,6 @@ export function useSystemModules() {
     isModuleEnabled,
     getModulesByIdentity,
     getModuleByRoute,
+    updateModule,
   };
 }

@@ -37,9 +37,45 @@
   }
 }
 
+.step-line::before {
+    content: ''; 
+    position: absolute; 
+    top: 0; 
+    bottom: 0; 
+    left: 23px; 
+    width: 2px; 
+    background: var(--color-border-light); 
+    z-index: 0;
+}
+.dark .step-line::before {
+    background: var(--color-border-dark);
+}
+
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.has-slots-day {
+  position: relative;
+}
+.has-slots-day::after {
+  content: '';
+  position: absolute;
+  bottom: 6px; 
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background-color: var(--color-primary);
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 1px var(--color-surface-light);
+}
+
+/* Hide dot when selected to avoid clash with white text */
+.rdp-day_selected.has-slots-day::after {
+    background-color: white;
 }
 
 @media (prefers-color-scheme: dark) {

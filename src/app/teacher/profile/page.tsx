@@ -67,6 +67,11 @@ export default function TeacherProfileSettingsPage() {
         onSave={handleSave}
         onAddEducation={handleAddEducation}
         onDeleteEducation={handleDeleteEducation}
+        onRefresh={() => {
+          repository.getProfile(profile.id).then((newData) => {
+            if (newData) setProfile(newData);
+          });
+        }}
       />
     </div>
   );

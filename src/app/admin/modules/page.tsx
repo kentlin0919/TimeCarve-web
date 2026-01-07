@@ -5,7 +5,8 @@ import { useSystemModules } from "@/hooks/useSystemModules";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminModulesPage() {
-  const { modules, loading, getModulesByIdentity } = useSystemModules();
+  const { modules, loading, getModulesByIdentity, updateModule } =
+    useSystemModules();
   const [toggling, setToggling] = useState<string | null>(null);
 
   // Edit State
@@ -14,16 +15,23 @@ export default function AdminModulesPage() {
 
   const handleToggle = async (id: string, currentState: boolean) => {
     setToggling(id);
+    const newState = !currentState;
+
+    // 1. Optimistic Update
+    updateModule(id, { is_active: newState });
+
     try {
       const { error } = await supabase
         .from("system_modules")
-        .update({ is_active: !currentState })
+        .update({ is_active: newState })
         .eq("id", id);
 
       if (error) throw error;
     } catch (error) {
       console.error("Error toggling module:", error);
       alert("Failed to update module status");
+      // 2. Rollback on error
+      updateModule(id, { is_active: currentState });
     } finally {
       setToggling(null);
     }

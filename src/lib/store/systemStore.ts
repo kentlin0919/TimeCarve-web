@@ -13,6 +13,7 @@ interface SystemState {
   init: () => Promise<void>;
   getModuleByRoute: (route: string) => SystemModule | undefined;
   getModulesByIdentity: (identityId: number) => SystemModule[];
+  updateModule: (id: string, updates: Partial<SystemModule>) => void;
 }
 
 export const useSystemStore = create<SystemState>((set, get) => ({
@@ -91,5 +92,13 @@ export const useSystemStore = create<SystemState>((set, get) => ({
 
   getModulesByIdentity: (identityId: number) => {
     return get().modules.filter((m) => m.identity_id === identityId);
+  },
+
+  updateModule: (id: string, updates: Partial<SystemModule>) => {
+    set((state) => ({
+      modules: state.modules.map((m) => 
+        m.id === id ? { ...m, ...updates } : m
+      )
+    }));
   }
 }));

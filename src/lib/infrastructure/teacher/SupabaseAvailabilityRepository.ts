@@ -51,4 +51,82 @@ export class SupabaseAvailabilityRepository implements AvailabilityRepository {
       isUnavailable: item.is_unavailable || false,
     }));
   }
+
+  async saveWeeklyAvailability(teacherId: string, availability: Omit<TeacherAvailabilityWeekly, "id">[]): Promise<void> {
+    // Transaction-like behavior: delete existing for this teacher, then insert new
+    // Note: Supabase doesn't support transactions in client-side JS directly without RPC, 
+    // but for now we can do delete then insert. 
+    // A better approach might be to upsert or use a specific RPC if atomic safety is critical.
+    
+    // 1. Delete existing weekly availability for this teacher
+    const { error: deleteError } = await this.client
+      .from("teacher_availability_weekly")
+      .delete()
+      .eq("teacher_id", teacherId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing availability: ${deleteError.message}`);
+    }
+
+    // 2. Insert new availability
+    if (availability.length > 0) {
+      const { error: insertError } = await this.client
+        .from("teacher_availability_weekly")
+        .insert(
+          availability.map(item => ({
+            teacher_id: teacherId,
+            day_of_week: item.dayOfWeek,
+            start_time: item.startTime,
+            end_time: item.endTime,
+          }))
+        );
+
+      if (insertError) {
+        throw new Error(`Failed to insert new availability: ${insertError.message}`);
+      }
+    }
+  }
+
+  async saveOverrides(teacherId: string, date: string, overrides: Omit<TeacherAvailabilityOverride, "id">[]): Promise<void> {
+    // 1. Delete existing overrides for this teacher and date
+    const { error: deleteError } = await this.client
+      .from("teacher_availability_overrides")
+      .delete()
+      .eq("teacher_id", teacherId)
+      .eq("date", date);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing overrides: ${deleteError.message}`);
+    }
+
+    // 2. Insert new overrides
+    if (overrides.length > 0) {
+      const { error: insertError } = await this.client
+        .from("teacher_availability_overrides")
+        .insert(
+          overrides.map(override => ({
+            teacher_id: teacherId,
+            date: override.date,
+            start_time: override.startTime,
+            end_time: override.endTime,
+            is_unavailable: override.isUnavailable,
+          }))
+        );
+
+      if (insertError) {
+        throw new Error(`Failed to save overrides: ${insertError.message}`);
+      }
+    }
+  }
+
+  async deleteOverride(overrideId: string): Promise<void> {
+    const { error } = await this.client
+      .from("teacher_availability_overrides")
+      .delete()
+      .eq("id", overrideId);
+
+    if (error) {
+      throw new Error(`Failed to delete override: ${error.message}`);
+    }
+  }
 }
