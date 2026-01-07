@@ -359,7 +359,7 @@ export default function AvailabilityPage() {
                   </div>
                 ) : (
                   calendarDays.map((d, index) => {
-                    if (d.type === "empty") {
+                    if (d.type === "empty" || !d.date) {
                       return (
                         <div
                           key={`empty-${index}`}
@@ -368,7 +368,6 @@ export default function AvailabilityPage() {
                       );
                     }
 
-                    // @ts-ignore
                     const dateObj = d.date;
                     const isSelected = isSameDay(dateObj, selectedDate);
                     const status = getDayStatus(dateObj);
