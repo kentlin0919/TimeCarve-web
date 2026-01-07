@@ -191,8 +191,12 @@ export default function AvailabilityPage() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 is Sunday
 
-  const calendarDays = useMemo(() => {
-    const days = [];
+  type CalendarDay =
+    | { day: number; type: "empty"; date?: undefined }
+    | { day: number; type: "current"; date: Date };
+
+  const calendarDays = useMemo<CalendarDay[]>(() => {
+    const days: CalendarDay[] = [];
     // Previous month filler
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push({ day: 0, type: "empty" });
@@ -359,7 +363,7 @@ export default function AvailabilityPage() {
                   </div>
                 ) : (
                   calendarDays.map((d, index) => {
-                    if (d.type === "empty") {
+                    if (d.type === "empty" || d.date === undefined) {
                       return (
                         <div
                           key={`empty-${index}`}
@@ -368,8 +372,7 @@ export default function AvailabilityPage() {
                       );
                     }
 
-                    // @ts-ignore
-                    const dateObj = d.date;
+                    const dateObj: Date = d.date;
                     const isSelected = isSameDay(dateObj, selectedDate);
                     const status = getDayStatus(dateObj);
                     const isUnavailable = status?.isUnavailable;
