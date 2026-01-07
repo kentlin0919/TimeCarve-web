@@ -1,3 +1,5 @@
+import { TeacherExperience } from "./experience";
+
 export interface TeacherEducation {
   id: string;
   teacherId: string;
@@ -9,6 +11,8 @@ export interface TeacherEducation {
   studyYear?: number | null;
   startYear: number | null;
   endYear: number | null;
+  statusId: number;
+  statusLabel?: string;
   isVerified: boolean;
 }
 
@@ -40,4 +44,5 @@ export interface TeacherProfile {
   
   // Relations
   educations: TeacherEducation[];
+  experiences: TeacherExperience[];
 }

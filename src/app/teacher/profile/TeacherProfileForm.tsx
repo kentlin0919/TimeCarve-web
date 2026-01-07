@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { TeacherProfile, TeacherEducation } from "@/lib/domain/teacher/entity";
 import Image from "next/image";
 import { updateUserAvatar } from "@/lib/avatar";
+import { ExperienceSection } from "./components/ExperienceSection";
 import { useSchools } from "@/hooks/useSchools";
 import SchoolCombobox from "@/components/ui/SchoolCombobox";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +16,7 @@ interface Props {
     edu: Omit<TeacherEducation, "id" | "teacherId">
   ) => Promise<TeacherEducation | null>;
   onDeleteEducation: (id: string) => Promise<void>;
+  onRefresh: () => void; // Callback to refresh data
 }
 
 const DEGREE_LEVELS = [
@@ -32,6 +34,7 @@ export default function TeacherProfileForm({
   onSave,
   onAddEducation,
   onDeleteEducation,
+  onRefresh,
 }: Props) {
   const iconOptions = [
     "psychology",
@@ -65,7 +68,25 @@ export default function TeacherProfileForm({
     department: "",
     startYear: "",
     endYear: "",
+    statusId: "1",
   });
+  const [educationStatuses, setEducationStatuses] = useState<
+    { id: number; label: string }[]
+  >([]);
+
+  useEffect(() => {
+    supabase
+      .from("education_statuses")
+      .select("id, label_zh")
+      .order("id")
+      .then(({ data }) => {
+        if (data) {
+          setEducationStatuses(
+            data.map((d) => ({ id: d.id, label: d.label_zh }))
+          );
+        }
+      });
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -76,6 +97,11 @@ export default function TeacherProfileForm({
       )}`
     );
   }, [profile.teacherCode]);
+
+  // Sync state with initialProfile prop when it changes (e.g. after parent refetch)
+  useEffect(() => {
+    setProfile(initialProfile);
+  }, [initialProfile]);
 
   // Handler helpers
   const handleChange = (field: keyof TeacherProfile, value: any) => {
@@ -107,7 +133,7 @@ export default function TeacherProfileForm({
       // Find school code from list if matched by name
       const matchedSchool = schools.find((s) => s.name === newEdu.schoolName);
       const p_code = matchedSchool ? matchedSchool.code : null;
-      
+
       const { data: schoolId, error: rpcError } = await supabase.rpc(
         "get_or_create_school",
         {
@@ -131,6 +157,7 @@ export default function TeacherProfileForm({
         department: newEdu.department,
         startYear: parseInt(newEdu.startYear),
         endYear: newEdu.endYear ? parseInt(newEdu.endYear) : null,
+        statusId: parseInt(newEdu.statusId),
         isVerified: false,
       });
 
@@ -141,12 +168,13 @@ export default function TeacherProfileForm({
         }));
         setIsAddingEducation(false);
         setNewEdu({
-            schoolName: "",
-            degree: "",
-            degreeLevel: "bachelor",
-            department: "",
-            startYear: "",
-            endYear: "",
+          schoolName: "",
+          degree: "",
+          degreeLevel: "bachelor",
+          department: "",
+          startYear: "",
+          endYear: "",
+          statusId: "1",
         });
       }
     } catch (err: any) {
@@ -767,6 +795,28 @@ export default function TeacherProfileForm({
                   </div>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-700 dark:text-gray-300">
+                    就學狀態 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newEdu.statusId}
+                    onChange={(e) =>
+                      setNewEdu((prev) => ({
+                        ...prev,
+                        statusId: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  >
+                    {educationStatuses.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={() => setIsAddingEducation(false)}
@@ -812,6 +862,11 @@ export default function TeacherProfileForm({
                           ]
                             .filter(Boolean)
                             .join(" · ")}
+                          {edu.statusLabel && (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                              {edu.statusLabel}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-text-sub mt-1">
                           {edu.startYear} - {edu.endYear || "迄今"}
@@ -830,6 +885,12 @@ export default function TeacherProfileForm({
                 })}
               </div>
             )}
+            {/* Experience Section */}
+            <ExperienceSection
+              teacherId={profile.id}
+              experiences={profile.experiences || []}
+              onUpdate={onRefresh}
+            />
           </div>
         </div>
       </div>

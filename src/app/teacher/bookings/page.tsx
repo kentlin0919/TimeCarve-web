@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { getTeacherBookings } from "@/app/actions/booking";
 import { getTeacherProfile } from "@/app/actions/teacher";
 import { Booking } from "@/lib/domain/booking/entity";
@@ -210,6 +211,15 @@ export default function TeacherBookingsPage() {
                   週視圖
                 </button>
               </div>
+              <Link
+                href="/teacher/availability"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 font-medium border border-border-light dark:border-border-dark hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  calendar_clock
+                </span>
+                <span className="text-sm">設定預約時間</span>
+              </Link>
               <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-medium shadow-lg shadow-primary/20 transition-all active:scale-95 group">
                 <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">
                   add

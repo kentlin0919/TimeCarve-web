@@ -48,7 +48,7 @@ export default function TeacherShell({
             </button>
           </header>
 
-          <main className="flex-1 overflow-hidden relative">{children}</main>
+          <main className="flex-1 overflow-y-auto relative">{children}</main>
         </div>
       </div>
     </>

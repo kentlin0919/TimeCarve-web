@@ -19,7 +19,7 @@ export interface AvailabilityRepository {
   getWeeklyAvailability(teacherId: string): Promise<TeacherAvailabilityWeekly[]>;
   getOverrides(teacherId: string, startDate: string, endDate: string): Promise<TeacherAvailabilityOverride[]>;
   
-  // Potential future methods
-  // updateWeeklyAvailability(...)
-  // setOverride(...)
+  saveWeeklyAvailability(teacherId: string, availability: Omit<TeacherAvailabilityWeekly, "id">[]): Promise<void>;
+  saveOverrides(teacherId: string, date: string, overrides: Omit<TeacherAvailabilityOverride, "id">[]): Promise<void>;
+  deleteOverride(overrideId: string): Promise<void>;
 }

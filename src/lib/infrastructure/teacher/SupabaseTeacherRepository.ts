@@ -1,6 +1,7 @@
 import { supabase as defaultClient } from "@/lib/supabase";
 import { TeacherRepository } from "@/lib/domain/teacher/repository";
 import { TeacherProfile, TeacherEducation } from "@/lib/domain/teacher/entity";
+import { TeacherExperience } from "@/lib/domain/teacher/experience";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export class SupabaseTeacherRepository implements TeacherRepository {
@@ -8,6 +9,23 @@ export class SupabaseTeacherRepository implements TeacherRepository {
 
   constructor(client?: SupabaseClient) {
     this.supabase = client || defaultClient;
+  }
+
+  async getEducationStatuses(): Promise<{ id: number; label: string }[]> {
+    const { data, error } = await this.supabase
+      .from("education_statuses")
+      .select("id, label_zh")
+      .order("id");
+
+    if (error) {
+      console.error("Error fetching education statuses:", error);
+      return [];
+    }
+
+    return data.map((s: any) => ({
+      id: s.id,
+      label: s.label_zh,
+    }));
   }
 
   async getProfile(userId: string): Promise<TeacherProfile | null> {
@@ -39,15 +57,24 @@ export class SupabaseTeacherRepository implements TeacherRepository {
           *,
           schools (
             name
+          ),
+          education_statuses (
+            label_zh
           )
         `)
         .eq("teacher_id", userId)
         .order("start_year", { ascending: false });
 
+      // 3. Fetch Experience
+      const { data: experienceData, error: expError } = await this.supabase
+        .from("teacher_experience")
+        .select("*")
+        .eq("teacher_id", userId)
+        .order("end_date", { ascending: false, nullsFirst: true })
+        .order("start_date", { ascending: false });
+
       if (eduError) {
         console.error("Error fetching education:", eduError);
-        // Continue with empty education if error? Or return null?
-        // Let's assume empty for now to show the profile at least
       }
 
       const educations: TeacherEducation[] = (educationData || []).map((e: any) => ({
@@ -61,7 +88,22 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         studyYear: e.study_year,
         startYear: e.start_year,
         endYear: e.end_year,
+        statusId: e.status_id,
+        statusLabel: e.education_statuses?.label_zh,
         isVerified: e.is_verified,
+      }));
+
+      const experiences: TeacherExperience[] = (experienceData || []).map((e: any) => ({
+        id: e.id,
+        teacher_id: e.teacher_id,
+        title: e.title,
+        organization: e.organization,
+        start_date: e.start_date,
+        end_date: e.end_date,
+        description: e.description,
+        is_current: e.is_current || false,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
       }));
 
       const userInfo = teacherData.user_info as any;
@@ -87,6 +129,7 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         lineNotifyEnabled: teacherData.line_notify_enabled || false,
         
         educations,
+        experiences,
       };
     } catch (error) {
       console.error("Unexpected error in getProfile:", error);
@@ -133,20 +176,6 @@ export class SupabaseTeacherRepository implements TeacherRepository {
   }
 
   async addEducation(userId: string, education: Omit<TeacherEducation, "id" | "teacherId">): Promise<TeacherEducation | null> {
-    // Need a status_id, usually 1 for 'Currently Studying' or 2 for 'Graduated'. 
-    // For MVP validation, we might need to look up a default status or pass it in.
-    // We'll hardcode status_id: 1 (Studying) or 4 (Graduated) if not provided?
-    // Let's assume 4 (Graduated) as default for Teachers or fetch 'Education Statuses' first?
-    // For simplicity, let's use a magic number valid in db seed (e.g., 1) or update schema to make it nullable?
-    // Schema says status_id is NOT NULL (number).
-    // Let's assume we pass a default status_id = 1 (University) if not specified in UI?
-    // Wait, `education_statuses` table exists.
-    // Let's just hardcode 1 for now or add to UI later.
-    
-    // Note: The UI form currently doesn't ask for "Status" (Graduated/Studying).
-    // We will assume '4' (Graduated) or '1' depending on Seed.
-    // SAFE BET: 1.
-    
     const { data, error } = await this.supabase
       .from("teacher_education")
       .insert({
@@ -157,10 +186,14 @@ export class SupabaseTeacherRepository implements TeacherRepository {
         department: education.department,
         start_year: education.startYear,
         end_year: education.endYear,
-        status_id: 1, // Default to a valid ID. User can implement status selection later.
+        status_id: education.statusId,
         is_verified: false,
       })
-      .select(`*, schools(name)`)
+      .select(`
+        *, 
+        schools(name),
+        education_statuses(label_zh)
+      `)
       .single();
 
     if (error) {
@@ -174,9 +207,13 @@ export class SupabaseTeacherRepository implements TeacherRepository {
       schoolName: data.schools?.name || "Unknown",
       schoolId: data.school_id,
       degree: data.degree,
+      degreeLevel: data.degree_level,
       department: data.department,
+      studyYear: data.study_year,
       startYear: data.start_year,
       endYear: data.end_year,
+      statusId: data.status_id,
+      statusLabel: data.education_statuses?.label_zh,
       isVerified: data.is_verified || false,
     };
   }

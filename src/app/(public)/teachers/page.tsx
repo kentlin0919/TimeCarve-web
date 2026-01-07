@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { TimelineItem } from "@/components/ui/TimelineItem";
 
 type PublicTeacherProfile = {
   teacher_code: string;
@@ -31,6 +32,16 @@ type PublicTeacherProfile = {
         study_year: number | null;
         start_year: number | null;
         end_year: number | null;
+      }[]
+    | null;
+  experiences:
+    | {
+        title: string;
+        organization: string;
+        start_date: string;
+        end_date: string | null;
+        is_current: boolean;
+        description: string | null;
       }[]
     | null;
 };
@@ -175,6 +186,7 @@ function TeachersContent() {
   const philosophyItems = profile.philosophy_items || [];
   const hasPhilosophyItems = philosophyItems.length > 0;
   const educations = profile.educations || [];
+  const experiences = profile.experiences || [];
   const primaryEducation = educations[0];
   const degreeLabel =
     primaryEducation?.degree_level || primaryEducation?.degree || null;
@@ -378,6 +390,103 @@ function TeachersContent() {
               </span>
             </div>
           </section>
+
+          {/* Education & Experience */}
+          {(educations.length > 0 || experiences.length > 0) && (
+            <section className="py-16 sm:py-24 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex flex-col gap-10">
+                <div className="flex flex-col gap-3 max-w-2xl">
+                  <span className="text-primary font-bold tracking-wider text-xs uppercase">
+                    Background
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-black text-[#111618] dark:text-white tracking-tight">
+                    學經歷
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 gap-12">
+                  {/* Experience */}
+                  {experiences.length > 0 && (
+                    <div className="space-y-6">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary">
+                          work
+                        </span>
+                        工作經歷
+                      </h3>
+                      <div className="border-l border-gray-200 dark:border-gray-700 ml-3 pl-8 space-y-8">
+                        {experiences.map((exp, idx) => (
+                          <div key={idx} className="relative">
+                            <div className="absolute -left-[39px] top-1.5 w-3 h-3 rounded-full border-2 border-primary bg-white dark:bg-gray-900"></div>
+                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 mb-1">
+                              <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {exp.title}
+                              </h4>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                {exp.organization}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-mono">
+                              {new Date(exp.start_date).getFullYear()}.
+                              {(new Date(exp.start_date).getMonth() + 1)
+                                .toString()
+                                .padStart(2, "0")}{" "}
+                              -{" "}
+                              {exp.is_current
+                                ? "Present"
+                                : exp.end_date
+                                ? `${new Date(exp.end_date).getFullYear()}.${(
+                                    new Date(exp.end_date).getMonth() + 1
+                                  )
+                                    .toString()
+                                    .padStart(2, "0")}`
+                                : ""}
+                            </div>
+                            {exp.description && (
+                              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
+                                {exp.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Education */}
+                  {educations.length > 0 && (
+                    <div className="space-y-6">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary">
+                          school
+                        </span>
+                        學歷
+                      </h3>
+                      <div className="border-l border-gray-200 dark:border-gray-700 ml-3 pl-8 space-y-8">
+                        {educations.map((edu, idx) => (
+                          <div key={idx} className="relative">
+                            <div className="absolute -left-[39px] top-1.5 w-3 h-3 rounded-full border-2 border-primary bg-white dark:bg-gray-900"></div>
+                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 mb-1">
+                              <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {edu.school_name}
+                              </h4>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                {edu.department}{" "}
+                                {edu.degree_level || edu.degree}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-mono">
+                              {edu.start_year} - {edu.end_year || "Present"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {hasPhilosophyItems && (
             <section className="py-16 sm:py-24" id="philosophy">
