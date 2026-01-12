@@ -117,8 +117,15 @@ export default function AvailabilityPage() {
   const handleSaveCurrentDay = async () => {
     if (!teacherId || !selectedDayOverride) return;
 
-    if (selectedDayOverride.isUnavailable) {
-      await saveOverrides(teacherId, selectedDayOverride.date, [
+    // Logic Fix: If user selects NO slots and does NOT check "Unavailable",
+    // we should treat it as "Unavailable" (Closed for the day),
+    // otherwise the system saves 0 overrides, causing it to fall back to Weekly settings.
+    const effectiveIsUnavailable =
+      selectedDayOverride.isUnavailable ||
+      selectedDayOverride.slots.length === 0;
+
+    if (effectiveIsUnavailable) {
+      const result = await saveOverrides(teacherId, selectedDayOverride.date, [
         {
           teacherId,
           date: selectedDayOverride.date,
@@ -127,6 +134,10 @@ export default function AvailabilityPage() {
           isUnavailable: true,
         },
       ]);
+      if (!result.success) {
+        alert("儲存失敗: " + result.error);
+        return;
+      }
     } else {
       const overrides = selectedDayOverride.slots.map((slot) => ({
         teacherId,
@@ -135,8 +146,19 @@ export default function AvailabilityPage() {
         endTime: slot.end,
         isUnavailable: false,
       }));
-      await saveOverrides(teacherId, selectedDayOverride.date, overrides);
+      const result = await saveOverrides(
+        teacherId,
+        selectedDayOverride.date,
+        overrides
+      );
+      if (!result.success) {
+        alert("儲存失敗: " + result.error);
+        return;
+      }
     }
+
+    alert("設定已儲存！");
+
     // Refresh
     const start = format(startOfMonth(currentDate), "yyyy-MM-dd");
     const end = format(endOfMonth(currentDate), "yyyy-MM-dd");

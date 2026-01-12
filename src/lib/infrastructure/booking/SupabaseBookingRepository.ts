@@ -15,6 +15,9 @@ export class SupabaseBookingRepository implements BookingRepository {
       .from("bookings")
       .select(`
         *,
+        booking_status:booking_statuses!fk_booking_status (
+          status_key
+        ),
         student:student_info (
           user:user_info (
             name,
@@ -22,13 +25,13 @@ export class SupabaseBookingRepository implements BookingRepository {
           )
         ),
         course:courses (
-          title
+          title,
+          price
         )
       `)
       .eq("teacher_id", teacherId)
-      // .eq("status", "confirmed") // Removed filter to show all bookings in calendar for now
-      .neq("status", "cancelled")
-      .neq("status", "rejected")
+      .neq("booking_status.status_key", "cancelled") 
+      .neq("booking_status.status_key", "rejected")
       .gte("booking_date", startDate)
       .lte("booking_date", endDate);
 
@@ -45,17 +48,30 @@ export class SupabaseBookingRepository implements BookingRepository {
       bookingDate: item.booking_date,
       startTime: item.start_time,
       endTime: item.end_time,
-      status: item.status,
+      status: item.booking_status?.status_key || "pending", // Map nested status back to string
       studentName: item.student?.user?.name || "Unknown",
       studentEmail: item.student?.user?.email || "",
       courseTitle: item.course?.title || "",
+      coursePrice: item.course?.price || 0,
     }));
 
   }
 
   async createBooking(booking: Omit<Booking, "id" | "status" | "studentName" | "studentEmail" | "courseTitle">): Promise<Booking> {
+    // 1. Get status ID for 'pending'
+    const { data: statusData, error: statusError } = await this.client
+      .from("booking_statuses")
+      .select("id")
+      .eq("status_key", "pending")
+      .single();
+    
+    if (statusError || !statusData) {
+      throw new Error("Could not find 'pending' booking status");
+    }
+
     const { data, error } = await this.client
       .from("bookings")
+        // @ts-ignore
       .insert({
         teacher_id: booking.teacherId,
         student_id: booking.studentId,
@@ -63,10 +79,15 @@ export class SupabaseBookingRepository implements BookingRepository {
         booking_date: booking.bookingDate,
         start_time: booking.startTime,
         end_time: booking.endTime,
-        status: "pending",
+        status_id: statusData.id,
         notes: booking.notes,
       })
-      .select()
+      .select(`
+        *,
+        booking_status:booking_statuses (
+          status_key
+        )
+      `)
       .single();
 
     if (error) {
@@ -82,8 +103,60 @@ export class SupabaseBookingRepository implements BookingRepository {
       bookingDate: data.booking_date,
       startTime: data.start_time,
       endTime: data.end_time,
-      status: data.status,
+      status: data.booking_status?.status_key || "pending",
       notes: data.notes,
     };
+  }
+
+  async getAllBookings(startDate: string, endDate: string): Promise<Booking[]> {
+    const { data, error } = await this.client
+      .from("bookings")
+      .select(`
+        *,
+        booking_status:booking_statuses!fk_booking_status (
+          status_key
+        ),
+        student:student_info (
+          user:user_info (
+            name,
+            email
+          )
+        ),
+        teacher:teacher_info (
+          user:user_info (
+            name,
+            email
+          )
+        ),
+        course:courses (
+          title,
+          price
+        )
+      `)
+      .neq("booking_status.status_key", "cancelled")
+      .neq("booking_status.status_key", "rejected")
+      .gte("booking_date", startDate)
+      .lte("booking_date", endDate);
+
+    if (error) {
+      console.error("Error fetching all bookings detailed:", JSON.stringify(error, null, 2));
+      throw new Error(`Failed to fetch all bookings: ${error.message} (Details: ${error.details || 'none'}, Hint: ${error.hint || 'none'})`);
+    }
+
+    return data.map((item: any) => ({
+      id: item.id,
+      teacherId: item.teacher_id,
+      studentId: item.student_id,
+      courseId: item.course_id,
+      bookingDate: item.booking_date,
+      startTime: item.start_time,
+      endTime: item.end_time,
+      status: item.booking_status?.status_key || "pending",
+      studentName: item.student?.user?.name || "Unknown",
+      studentEmail: item.student?.user?.email || "",
+      teacherName: item.teacher?.user?.name || "Unknown", // Add teacher name
+      courseTitle: item.course?.title || "",
+      coursePrice: item.course?.price || 0,
+    }));
   }
 }

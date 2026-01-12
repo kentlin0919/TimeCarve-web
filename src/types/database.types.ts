@@ -34,6 +34,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_statuses: {
+        Row: {
+          color: string
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          label_zh: string
+          status_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          label_zh: string
+          status_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          label_zh?: string
+          status_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -43,7 +73,7 @@ export type Database = {
           id: string
           notes: string | null
           start_time: string
-          status: string
+          status_id: number
           student_id: string
           teacher_id: string
           updated_at: string
@@ -56,7 +86,7 @@ export type Database = {
           id?: string
           notes?: string | null
           start_time: string
-          status?: string
+          status_id: number
           student_id: string
           teacher_id: string
           updated_at?: string
@@ -69,7 +99,7 @@ export type Database = {
           id?: string
           notes?: string | null
           start_time?: string
-          status?: string
+          status_id?: number
           student_id?: string
           teacher_id?: string
           updated_at?: string
@@ -94,6 +124,13 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teacher_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_booking_status"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "booking_statuses"
             referencedColumns: ["id"]
           },
         ]
@@ -285,6 +322,47 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          content: string
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_info"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_settings: {
         Row: {
@@ -882,7 +960,23 @@ export type Database = {
         }
         Returns: string
       }
-      get_public_teacher_profile: { Args: { code: string }; Returns: Json }
+      get_public_teacher_profile: {
+        Args: { code: string }
+        Returns: {
+          avatar_url: string
+          base_price: number
+          bio: string
+          educations: Json
+          experience_years: number
+          experiences: Json
+          name: string
+          philosophy_items: Json
+          philosophy_subtitle: string
+          specialties: string[]
+          teacher_code: string
+          title: string
+        }[]
+      }
       has_role: { Args: { target_role_name: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
     }

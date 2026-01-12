@@ -11,4 +11,6 @@ export interface Booking {
   studentName?: string;
   studentEmail?: string;
   courseTitle?: string;
+  coursePrice?: number;
+  teacherName?: string;
 }

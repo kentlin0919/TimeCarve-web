@@ -20,11 +20,6 @@ export default function StudentCoursesPage() {
     });
   };
 
-  const handleBook = (courseId: string) => {
-    const hours = selectedHours[courseId] || 1;
-    router.push(`/student/booking/create?courseId=${courseId}&hours=${hours}`);
-  };
-
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center h-full bg-slate-50 dark:bg-background-dark">
@@ -229,12 +224,14 @@ export default function StudentCoursesPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleBook(course.id)}
+                      onClick={() =>
+                        router.push(`/student/courses/${course.id}`)
+                      }
                       className="bg-slate-900 hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary-dark dark:text-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all flex items-center gap-2 group-hover:scale-105"
                     >
-                      立即預約
+                      查看詳情
                       <span className="material-symbols-outlined text-[20px]">
-                        arrow_forward
+                        visibility
                       </span>
                     </button>
                   </div>

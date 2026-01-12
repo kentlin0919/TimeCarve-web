@@ -3,8 +3,9 @@
 import { GetAvailableSlotsUseCase } from "@/lib/application/booking/GetAvailableSlotsUseCase";
 import { CreateBookingUseCase } from "@/lib/application/booking/CreateBookingUseCase";
 import { SupabaseAvailabilityRepository } from "@/lib/infrastructure/teacher/SupabaseAvailabilityRepository";
+import { SupabaseNotificationRepository } from "@/lib/infrastructure/notification/SupabaseNotificationRepository";
 import { SupabaseBookingRepository } from "@/lib/infrastructure/booking/SupabaseBookingRepository";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function getAvailableSlots(
     teacherId: string, 
@@ -59,15 +60,47 @@ export async function createBooking(
         throw new Error("Unauthorized");
     }
 
-    // Verify student is booking for themselves
-    if (user.id !== bookingData.studentId) {
-        // Option: allow admin/teacher to book for others?
-        // strict rule: student must match auth user
+    // Verify user is either the student OR the teacher
+    if (user.id !== bookingData.studentId && user.id !== bookingData.teacherId) {
         throw new Error("Unauthorized booking attempt");
     }
 
     const bookingRepo = new SupabaseBookingRepository(supabase);
-    const useCase = new CreateBookingUseCase(bookingRepo);
+    const availRepo = new SupabaseAvailabilityRepository(supabase);
+    
+    // Use Admin Client for notifications to bypass RLS (Student notifying Teacher)
+    const adminSupabase = createAdminClient();
+    const notificationRepo = new SupabaseNotificationRepository(adminSupabase);
+    
+    const useCase = new CreateBookingUseCase(bookingRepo, availRepo, notificationRepo);
 
     return await useCase.execute(bookingData);
+}
+
+export async function updateBookingStatus(bookingId: string, status: "pending" | "confirmed" | "cancelled" | "completed") {
+  const supabase = await createClient();
+
+  // 1. Get status ID
+  const { data: statusData, error: statusError } = await supabase
+    .from("booking_statuses")
+    .select("id")
+    .eq("status_key", status)
+    .single();
+
+  if (statusError || !statusData) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  // 2. Update booking with status_id
+  const { error } = await supabase
+    .from("bookings")
+    // @ts-ignore
+    .update({ status_id: statusData.id })
+    .eq("id", bookingId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return { success: true };
 }

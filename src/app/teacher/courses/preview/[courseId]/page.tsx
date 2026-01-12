@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import StudentCourseDetailView from "@/app/student/courses/[courseId]/StudentCourseDetailView";
 import { SupabaseAuthRepository } from "@/lib/infrastructure/auth/SupabaseAuthRepository";
 import { SupabaseCourseRepository } from "@/lib/infrastructure/course/SupabaseCourseRepository";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { Course } from "@/lib/domain/course/entity";
 
 export default function TeacherCoursePreviewPage() {
@@ -33,8 +33,9 @@ export default function TeacherCoursePreviewPage() {
       setError(null);
 
       try {
+        const supabase = createClient();
         const authRepo = new SupabaseAuthRepository();
-        const courseRepo = new SupabaseCourseRepository();
+        const courseRepo = new SupabaseCourseRepository(supabase);
         const user = await authRepo.getUser();
 
         if (!user) {
@@ -64,7 +65,10 @@ export default function TeacherCoursePreviewPage() {
           teacherTitle: teacherInfo?.title || null,
           teacherAvatarUrl: teacherInfo?.user_info?.avatar_url || null,
         });
-        const baseHours = Math.max(1, Math.ceil((data.durationMinutes || 60) / 60));
+        const baseHours = Math.max(
+          1,
+          Math.ceil((data.durationMinutes || 60) / 60)
+        );
         setSelectedHours(baseHours);
       } catch (err: any) {
         console.error("Error loading preview:", err);

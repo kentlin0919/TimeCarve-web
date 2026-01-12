@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/components/providers/ModalContext";
 
+import { createClient } from "@/lib/supabase/client";
 import { Course, CourseSection } from "@/lib/domain/course/entity";
 import { SupabaseCourseRepository } from "@/lib/infrastructure/course/SupabaseCourseRepository";
 import { SupabaseAuthRepository } from "@/lib/infrastructure/auth/SupabaseAuthRepository";
@@ -26,15 +27,18 @@ export default function TeacherCoursesPage() {
   const [activeTab, setActiveTab] = useState<"info" | "content">("info"); // Tab state
   const [showAllFields, setShowAllFields] = useState(false);
   const [expandedContent, setExpandedContent] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({});
 
   // Load courses on mount
   useEffect(() => {
     const loadCourses = async () => {
       setLoading(true);
       try {
+        const supabase = createClient();
         const authRepo = new SupabaseAuthRepository();
-        const courseRepo = new SupabaseCourseRepository();
+        const courseRepo = new SupabaseCourseRepository(supabase);
         const user = await authRepo.getUser();
 
         if (user) {
@@ -80,7 +84,8 @@ export default function TeacherCoursesPage() {
   const handleSaveCourse = async (formData: Partial<Course>) => {
     setSaving(true);
     try {
-      const courseRepo = new SupabaseCourseRepository();
+      const supabase = createClient();
+      const courseRepo = new SupabaseCourseRepository(supabase);
 
       if (isCreating) {
         const authRepo = new SupabaseAuthRepository();
@@ -331,11 +336,14 @@ export default function TeacherCoursesPage() {
                             </div>
                             <div className="text-xs text-text-sub mt-0.5 space-y-1">
                               <p className="truncate">
-                                {course.courseType || "未設定類型"} • {course.priceUnit || "小時"} • $
+                                {course.courseType || "未設定類型"} •{" "}
+                                {course.priceUnit || "小時"} • $
                                 {course.price?.toLocaleString() || 0}
                               </p>
                               <p className="truncate">
-                                時長 {Math.ceil((course.durationMinutes || 0) / 60)} 小時
+                                時長{" "}
+                                {Math.ceil((course.durationMinutes || 0) / 60)}{" "}
+                                小時
                                 {updatedAt ? ` • 更新 ${updatedAt}` : ""}
                               </p>
                             </div>
@@ -419,7 +427,9 @@ export default function TeacherCoursesPage() {
                           </button>
                           {selectedCourse.content && (
                             <button
-                              onClick={() => setExpandedContent((prev) => !prev)}
+                              onClick={() =>
+                                setExpandedContent((prev) => !prev)
+                              }
                               className="px-3 py-1.5 text-xs font-semibold rounded-full border border-border-light dark:border-border-dark text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                               {expandedContent ? "收合內容" : "展開內容"}
@@ -437,7 +447,11 @@ export default function TeacherCoursesPage() {
                           基本資料
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {renderField("課程 ID", selectedCourse.id, Boolean(selectedCourse.id))}
+                          {renderField(
+                            "課程 ID",
+                            selectedCourse.id,
+                            Boolean(selectedCourse.id)
+                          )}
                           {renderField(
                             "課程名稱",
                             selectedCourse.title,
@@ -481,8 +495,11 @@ export default function TeacherCoursesPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {renderField(
                             "單價",
-                            `NT$ ${(selectedCourse.price || 0).toLocaleString()}`,
-                            selectedCourse.price !== undefined && selectedCourse.price !== null
+                            `NT$ ${(
+                              selectedCourse.price || 0
+                            ).toLocaleString()}`,
+                            selectedCourse.price !== undefined &&
+                              selectedCourse.price !== null
                           )}
                           {renderField(
                             "計價單位",
@@ -501,7 +518,9 @@ export default function TeacherCoursesPage() {
                           )}
                           {renderField(
                             "總時數",
-                            `${Math.ceil((selectedCourse.durationMinutes || 0) / 60)} 小時`,
+                            `${Math.ceil(
+                              (selectedCourse.durationMinutes || 0) / 60
+                            )} 小時`,
                             Boolean(selectedCourse.durationMinutes)
                           )}
                         </div>
@@ -515,13 +534,16 @@ export default function TeacherCoursesPage() {
                             selectedCourse.desc || "—",
                             Boolean(selectedCourse.desc)
                           )}
-                          {selectedCourse.content && (expandedContent || showAllFields) && (
-                            <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 p-4 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
-                              {selectedCourse.content}
-                            </div>
-                          )}
+                          {selectedCourse.content &&
+                            (expandedContent || showAllFields) && (
+                              <div className="rounded-xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 p-4 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
+                                {selectedCourse.content}
+                              </div>
+                            )}
                           {showAllFields && !selectedCourse.content && (
-                            <div className="text-xs text-text-sub">尚未提供完整內容</div>
+                            <div className="text-xs text-text-sub">
+                              尚未提供完整內容
+                            </div>
                           )}
                         </div>
 
@@ -544,7 +566,9 @@ export default function TeacherCoursesPage() {
                           </div>
                         ) : (
                           showAllFields && (
-                            <p className="text-sm text-text-sub">尚未設定標籤</p>
+                            <p className="text-sm text-text-sub">
+                              尚未設定標籤
+                            </p>
                           )
                         )}
 
@@ -590,10 +614,13 @@ export default function TeacherCoursesPage() {
                                   <div className="flex items-start justify-between gap-4">
                                     <div>
                                       <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                                        {section.title || `未命名章節 ${idx + 1}`}
+                                        {section.title ||
+                                          `未命名章節 ${idx + 1}`}
                                       </h4>
                                       <p className="text-xs text-text-sub mt-1">
-                                        {section.duration ? `${section.duration} 分鐘` : ""}
+                                        {section.duration
+                                          ? `${section.duration} 分鐘`
+                                          : ""}
                                         {section.isFree ? " • 免費" : ""}
                                       </p>
                                     </div>
@@ -622,32 +649,36 @@ export default function TeacherCoursesPage() {
                                             Assets
                                           </p>
                                           <div className="space-y-1.5">
-                                            {section.assets?.map((asset, assetIdx) => (
-                                              <div
-                                                key={`${section.id}-asset-${assetIdx}`}
-                                                className="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300"
-                                              >
-                                                <span>
-                                                  {asset.type} • {asset.title}
-                                                </span>
-                                                <a
-                                                  className="text-primary underline"
-                                                  href={asset.url}
-                                                  target="_blank"
-                                                  rel="noreferrer"
+                                            {section.assets?.map(
+                                              (asset, assetIdx) => (
+                                                <div
+                                                  key={`${section.id}-asset-${assetIdx}`}
+                                                  className="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300"
                                                 >
-                                                  開啟
-                                                </a>
-                                              </div>
-                                            ))}
+                                                  <span>
+                                                    {asset.type} • {asset.title}
+                                                  </span>
+                                                  <a
+                                                    className="text-primary underline"
+                                                    href={asset.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                  >
+                                                    開啟
+                                                  </a>
+                                                </div>
+                                              )
+                                            )}
                                           </div>
                                         </div>
                                       )}
-                                      {showAllFields && !section.content && !hasAssets && (
-                                        <p className="text-xs text-text-sub">
-                                          尚未提供章節內容
-                                        </p>
-                                      )}
+                                      {showAllFields &&
+                                        !section.content &&
+                                        !hasAssets && (
+                                          <p className="text-xs text-text-sub">
+                                            尚未提供章節內容
+                                          </p>
+                                        )}
                                     </div>
                                   )}
                                 </div>
@@ -659,7 +690,9 @@ export default function TeacherCoursesPage() {
                         <div className="pt-4 mt-4 border-t border-border-light dark:border-border-dark">
                           <button
                             onClick={() =>
-                              router.push(`/teacher/courses/preview/${selectedCourse.id}`)
+                              router.push(
+                                `/teacher/courses/preview/${selectedCourse.id}`
+                              )
                             }
                             className="w-full p-4 rounded-xl border border-dashed border-border-light dark:border-border-dark flex items-center justify-center gap-2 text-primary hover:bg-primary/5 transition-colors"
                           >

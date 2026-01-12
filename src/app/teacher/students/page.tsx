@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Database } from "@/types/database.types";
 import { useModal } from "@/components/providers/ModalContext";
+import { SendNotificationDialog } from "@/components/notification/SendNotificationDialog";
 
 type StudentWithInfo = Database["public"]["Tables"]["student_info"]["Row"] & {
   user_info: Database["public"]["Tables"]["user_info"]["Row"] | null;
@@ -626,15 +627,21 @@ export default function TeacherStudentManagementPage() {
 
                         {/* Actions Toolbar */}
                         <div className="flex gap-2 md:gap-3 justify-end border-t md:border-t-0 border-slate-200 dark:border-slate-700 pt-4 md:pt-0">
-                          <button
-                            className="flex-1 md:flex-none flex items-center justify-center h-10 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-sub hover:text-primary hover:border-primary transition-colors shadow-sm gap-2"
-                            title="傳送訊息"
-                          >
-                            <span className="material-symbols-outlined text-[20px]">
-                              chat
-                            </span>
-                            <span className="md:hidden text-sm">訊息</span>
-                          </button>
+                          <SendNotificationDialog
+                            recipientId={selectedStudent.user_info.id}
+                            recipientName={selectedStudent.user_info.name}
+                            trigger={
+                              <button
+                                className="flex-1 md:flex-none flex items-center justify-center h-10 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-sub hover:text-primary hover:border-primary transition-colors shadow-sm gap-2"
+                                title="傳送通知"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">
+                                  notifications
+                                </span>
+                                <span className="md:hidden text-sm">通知</span>
+                              </button>
+                            }
+                          />
                           <button
                             onClick={handleEditClick}
                             className="flex-1 md:flex-none px-4 h-10 rounded-lg bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2"

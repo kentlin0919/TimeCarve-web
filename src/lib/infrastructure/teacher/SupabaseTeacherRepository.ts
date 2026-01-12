@@ -221,4 +221,43 @@ export class SupabaseTeacherRepository implements TeacherRepository {
   async deleteEducation(id: string): Promise<void> {
     await this.supabase.from("teacher_education").delete().eq("id", id);
   }
+
+  async getStudents(teacherId: string): Promise<{ id: string; name: string; email: string; avatarUrl?: string }[]> {
+    // 1. Get teacher code first
+    const { data: teacherMeta, error: metaError } = await this.supabase
+      .from("teacher_info")
+      .select("teacher_code")
+      .eq("id", teacherId)
+      .single();
+
+    if (metaError || !teacherMeta) {
+      console.error("Error fetching teacher code:", metaError);
+      return [];
+    }
+
+    // 2. Find students with this teacher_code
+    const { data: students, error } = await this.supabase
+      .from("student_info")
+      .select(`
+        id,
+        user:user_info!inner (
+          name,
+          email,
+          avatar_url
+        )
+      `)
+      .eq("teacher_code", teacherMeta.teacher_code);
+
+    if (error) {
+      console.error("Error fetching students:", error);
+      return [];
+    }
+
+    return students.map((s: any) => ({
+      id: s.id,
+      name: s.user?.name || "Unknown",
+      email: s.user?.email || "",
+      avatarUrl: s.user?.avatar_url,
+    }));
+  }
 }

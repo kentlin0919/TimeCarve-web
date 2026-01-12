@@ -39,27 +39,37 @@ export class GetAvailableSlotsUseCase {
       const dayOfWeek = current.getDay(); // 0 is Sunday
 
       // 1. Determine Availability for this day
-      let start: string | null = null;
-      let end: string | null = null;
+      // 1. Determine Availability Ranges for this day
+      const dayRanges: { start: string; end: string }[] = [];
 
-      const override = overrides.find((o) => o.date === dateStr);
-      if (override) {
-        if (!override.isUnavailable && override.startTime && override.endTime) {
-          start = override.startTime;
-          end = override.endTime;
+      // Check for overrides first
+      const dayOverrides = overrides.filter((o) => o.date === dateStr);
+      
+      if (dayOverrides.length > 0) {
+        // If there's an explicit "unavailable" flag, the day is closed regardless of other slots?
+        // In our current UI logic, if isUnavailable is true, it blocks the whole day.
+        const isClosed = dayOverrides.some((o) => o.isUnavailable);
+        
+        if (!isClosed) {
+          dayOverrides.forEach((o) => {
+             if (o.startTime && o.endTime) {
+               dayRanges.push({ start: o.startTime, end: o.endTime });
+             }
+          });
         }
-        // If unavailable, start/end remain null
       } else {
-        const weekly = weeklyAvailability.find((w) => w.dayOfWeek === dayOfWeek);
-        if (weekly) {
-          start = weekly.startTime;
-          end = weekly.endTime;
-        }
+        // Fallback to weekly availability
+        const weeklyRules = weeklyAvailability.filter((w) => w.dayOfWeek === dayOfWeek);
+        weeklyRules.forEach((w) => {
+           if (w.startTime && w.endTime) {
+             dayRanges.push({ start: w.startTime, end: w.endTime });
+           }
+        });
       }
 
-      if (start && end) {
-        // 2. Generate slots
-        const slots = this.generateSlots(dateStr, start, end, durationMinutes);
+      // 2. Generate slots for each range
+      for (const range of dayRanges) {
+        const slots = this.generateSlots(dateStr, range.start, range.end, durationMinutes);
         
         // 3. Filter overlapping bookings
         const dayBookings = bookings.filter((b) => b.bookingDate === dateStr);

@@ -1,11 +1,19 @@
 
 import { Course, CourseSection } from "@/lib/domain/course/entity";
 import { CourseRepository } from "@/lib/domain/course/repository";
-import { supabase } from "@/lib/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+import { createClient } from "@/lib/supabase/client";
 
 export class SupabaseCourseRepository implements CourseRepository {
+  private supabase: SupabaseClient;
+
+  constructor(client?: SupabaseClient) {
+    this.supabase = client || createClient();
+  }
+
   async getTeacherCourses(teacherId: string): Promise<Course[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("courses")
       .select("*, course_tags(tags(name))")
       .eq("teacher_id", teacherId)
@@ -20,7 +28,7 @@ export class SupabaseCourseRepository implements CourseRepository {
   }
 
   async getCourse(id: string): Promise<Course | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("courses")
       .select("*, course_tags(tags(name))")
       .eq("id", id)
@@ -31,7 +39,7 @@ export class SupabaseCourseRepository implements CourseRepository {
   }
 
   async createCourse(course: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("courses")
       .insert({
         teacher_id: course.teacherId,
@@ -76,7 +84,7 @@ export class SupabaseCourseRepository implements CourseRepository {
 
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("courses")
       .update(updateData)
       .eq("id", id)
@@ -111,25 +119,19 @@ export class SupabaseCourseRepository implements CourseRepository {
       if (!tagName) continue;
 
       // Check existence: Search for my tag OR a global tag
-      const { data: existingTags } = await supabase
+      const { data: existingTags } = await this.supabase
         .from("tags")
         .select("id, teacher_id")
         .or(`teacher_id.eq.${teacherId},teacher_id.is.null`)
         .eq("name", tagName);
 
-      // Prefer global tag if available? Or prefer personal?
-      // Let's prefer global tag if exact match, to avoid cluttering personal tags?
-      // Or if personal tag exists, use it.
-      // If multiple found (e.g. I have "Math" and Global has "Math"), use mine or global?
-      // Let's use the first one found.
-      
       let targetTagId: string | null = null;
 
       if (existingTags && existingTags.length > 0) {
         targetTagId = existingTags[0].id;
       } else {
         // Create new personal tag
-        const { data: newTag, error } = await supabase
+        const { data: newTag, error } = await this.supabase
           .from("tags")
           .insert({ teacher_id: teacherId, name: tagName })
           .select("id")
@@ -146,7 +148,7 @@ export class SupabaseCourseRepository implements CourseRepository {
 
     // 2. Sync course_tags
     // First, remove all existing tags for this course
-    await supabase.from("course_tags").delete().eq("course_id", courseId);
+    await this.supabase.from("course_tags").delete().eq("course_id", courseId);
 
     // Then insert new links
     if (tagIds.length > 0) {
@@ -156,13 +158,13 @@ export class SupabaseCourseRepository implements CourseRepository {
         course_id: courseId,
         tag_id: tagId
       }));
-      const { error } = await supabase.from("course_tags").insert(links);
+      const { error } = await this.supabase.from("course_tags").insert(links);
       if (error) console.error("Error linking tags:", error);
     }
   }
 
   async deleteCourse(id: string): Promise<void> {
-    const { error } = await supabase.from("courses").delete().eq("id", id);
+    const { error } = await this.supabase.from("courses").delete().eq("id", id);
     if (error) console.error("Error deleting course:", error);
   }
 

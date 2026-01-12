@@ -6,6 +6,8 @@ import { getTeacherBookings } from "@/app/actions/booking";
 import { getTeacherProfile } from "@/app/actions/teacher";
 import { Booking } from "@/lib/domain/booking/entity";
 import { TeacherProfile } from "@/lib/domain/teacher/entity";
+import { EditBookingDialog } from "@/components/teacher/bookings/EditBookingDialog";
+import { CreateBookingDialog } from "@/components/teacher/bookings/CreateBookingDialog";
 
 export default function TeacherBookingsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -13,6 +15,8 @@ export default function TeacherBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Fetch profile on mount
   useEffect(() => {
@@ -45,21 +49,22 @@ export default function TeacherBookingsPage() {
   }
 
   // Fetch bookings when month changes
-  useEffect(() => {
-    async function fetchBookings() {
-      setLoading(true);
-      try {
-        const start = new Date(year, month, 1);
-        const end = new Date(year, month + 1, 0); // Last day of month
-        const data = await getTeacherBookings(start, end);
-        setBookings(data);
-      } catch (error) {
-        console.error("Failed to fetch bookings:", error);
-      } finally {
-        setLoading(false);
-      }
+  async function refreshBookings() {
+    setLoading(true);
+    try {
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0); // Last day of month
+      const data = await getTeacherBookings(start, end);
+      setBookings(data);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+    } finally {
+      setLoading(false);
     }
-    fetchBookings();
+  }
+
+  useEffect(() => {
+    refreshBookings();
   }, [year, month]);
 
   // Group bookings by day
@@ -220,7 +225,10 @@ export default function TeacherBookingsPage() {
                 </span>
                 <span className="text-sm">設定預約時間</span>
               </Link>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-medium shadow-lg shadow-primary/20 transition-all active:scale-95 group">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-medium shadow-lg shadow-primary/20 transition-all active:scale-95 group"
+              >
                 <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">
                   add
                 </span>
@@ -440,7 +448,16 @@ export default function TeacherBookingsPage() {
                           <button className="flex-1 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-transparent hover:border-border-light dark:hover:border-border-dark transition-all shadow-sm">
                             查看詳情
                           </button>
-                          <button className="flex-1 py-1.5 text-xs font-medium text-primary dark:text-primary hover:bg-primary hover:text-white rounded-lg bg-white/50 dark:bg-slate-800/50 border border-transparent hover:border-primary transition-all shadow-sm">
+                          <button
+                            onClick={() => {
+                              // Find the original booking object
+                              const booking = bookings.find(
+                                (b) => b.id === ev.id
+                              );
+                              if (booking) setEditingBooking(booking);
+                            }}
+                            className="flex-1 py-1.5 text-xs font-medium text-primary dark:text-primary hover:bg-primary hover:text-white rounded-lg bg-white/50 dark:bg-slate-800/50 border border-transparent hover:border-primary transition-all shadow-sm"
+                          >
                             編輯預約
                           </button>
                         </div>
@@ -470,36 +487,82 @@ export default function TeacherBookingsPage() {
                   </div>
                 </div>
 
-                {/* Mock Upcoming items - Removed or should be real too? For now I'll just leave them out or simplified */}
-                {/* I will remove mock upcoming items for now to clean up completely */}
+                {/* Upcoming items could be added here later */}
               </div>
 
               <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-5 text-white shadow-lg shadow-primary/20 relative overflow-hidden m-5 mt-0">
                 <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-                <div className="flex items-center justify-between mb-3 relative z-10">
-                  <span className="text-xs font-medium text-white/90">
-                    本月待確認收入
-                  </span>
-                  <span className="material-symbols-outlined text-[20px] text-white/80">
-                    payments
-                  </span>
-                </div>
-                <div className="text-2xl font-bold tracking-tight relative z-10">
-                  NT$ 0
-                </div>
-                <div className="mt-4 flex items-center gap-2 relative z-10">
-                  <span className="text-[10px] bg-white/20 px-2 py-1 rounded backdrop-blur-sm">
-                    0 筆款項待處理
-                  </span>
-                  <button className="ml-auto text-xs font-bold hover:underline">
-                    查看詳情
-                  </button>
-                </div>
+                {/* Calculate Revenue */}
+                {(() => {
+                  const pendingTotal = bookings
+                    .filter((b) => b.status === "pending")
+                    .reduce((sum, b) => sum + (b.coursePrice || 0), 0);
+
+                  const receivedTotal = bookings
+                    .filter(
+                      (b) =>
+                        b.status === "confirmed" || b.status === "completed"
+                    )
+                    .reduce((sum, b) => sum + (b.coursePrice || 0), 0);
+
+                  const projectedTotal = pendingTotal + receivedTotal;
+
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-3 relative z-10">
+                        <span className="text-xs font-medium text-white/90">
+                          本月預估收入 (Projected)
+                        </span>
+                        <span className="material-symbols-outlined text-[20px] text-white/80">
+                          payments
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold tracking-tight relative z-10">
+                        NT$ {projectedTotal.toLocaleString()}
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-1 relative z-10">
+                        <div className="flex justify-between items-center text-xs text-white/90">
+                          <span>已收款 (Received):</span>
+                          <span className="font-bold">
+                            NT$ {receivedTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-white/70">
+                          <span>待確認 (Pending):</span>
+                          <span>NT$ {pendingTotal.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-white/20 relative z-10 flex text-[10px] text-white/80 gap-2">
+                        <span>共 {bookings.length} 筆預約</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <EditBookingDialog
+        booking={editingBooking}
+        open={!!editingBooking}
+        onOpenChange={(open) => {
+          if (!open) setEditingBooking(null);
+        }}
+        onSuccess={refreshBookings}
+      />
+
+      {profile && (
+        <CreateBookingDialog
+          open={isCreateOpen}
+          onOpenChange={setIsCreateOpen}
+          onSuccess={refreshBookings}
+          teacherId={profile.id}
+        />
+      )}
     </div>
   );
 }

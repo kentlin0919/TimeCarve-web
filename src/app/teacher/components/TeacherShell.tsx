@@ -40,12 +40,14 @@ export default function TeacherShell({
                 TimeCarve 刻時
               </span>
             </div>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-            >
-              <span className="material-symbols-outlined">menu</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+              >
+                <span className="material-symbols-outlined">menu</span>
+              </button>
+            </div>
           </header>
 
           <main className="flex-1 overflow-y-auto relative">{children}</main>

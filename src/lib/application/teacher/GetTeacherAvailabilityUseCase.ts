@@ -28,10 +28,12 @@ export class GetTeacherAvailabilityUseCase {
       const dayOfWeek = d.getDay(); // 0-6
 
       // 1. Check for overrides first
-      const override = overrides.find(o => o.date === dateString);
+      const dayOverrides = overrides.filter(o => o.date === dateString);
 
-      if (override) {
-        if (override.isUnavailable) {
+      if (dayOverrides.length > 0) {
+        const isUnavailable = dayOverrides.some(o => o.isUnavailable);
+
+        if (isUnavailable) {
           // Day is fully blocked
           result.push({
             date: dateString,
@@ -39,25 +41,18 @@ export class GetTeacherAvailabilityUseCase {
             slots: [],
             isUnavailable: true,
           });
-        } else if (override.startTime && override.endTime) {
-          // Distinct hours for this day
+        } else {
+          // Collect all slots for this day
+          const slots = dayOverrides
+            .filter(o => o.startTime && o.endTime)
+            .map(o => ({ start: o.startTime!, end: o.endTime! }));
+
           result.push({
             date: dateString,
             dayOfWeek,
-            slots: [{ start: override.startTime, end: override.endTime }],
+            slots,
             isUnavailable: false,
           });
-        } else {
-            // Override exists but no specific time and not unavailable? 
-            // Treat as unavailable or use default logic? 
-            // Assuming if isUnavailable is false but no times, strictly implies "no slots defined but available" which might mean full day?
-            // For safety, if no times are set in override, we treat it as no slots.
-             result.push({
-                date: dateString,
-                dayOfWeek,
-                slots: [],
-                isUnavailable: false, // Techincally not marked "unavailable" but has no slots
-            });
         }
       } else {
         // 2. No override, check weekly availability

@@ -119,7 +119,7 @@ export const useStudentCourseDetail = (courseId?: string) => {
           return;
         }
 
-        const courseRepo = new SupabaseCourseRepository();
+        const courseRepo = new SupabaseCourseRepository(supabase);
         const data = await courseRepo.getCourse(courseId);
 
         if (!data || data.teacherId !== ctx.teacherId) {
