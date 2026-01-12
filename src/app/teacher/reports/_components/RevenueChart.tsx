@@ -79,29 +79,14 @@ export function RevenueChart({
                 style={{ height: `${Math.max(heightPercent, 1)}%` }} // Minimum height to show bar exists
               >
                 <div
-                  className="absolute bottom-0 w-full bg-primary/80 rounded-t-sm animate-[grow_1s_ease-out_forwards]"
-                  style={{ height: "0%", animationDelay: `${index * 0.1}s` }}
-                ></div>
-                {/* CSS animation needs keyframes to apply to the inner div, or we pass height in style directly to inner div if we use width transition. 
-                    The Original used keyframes defined in jsx style block. 
-                    Actually, straightforward way:
-                */}
-                <style jsx>{`
-                  @keyframes grow-${index} {
-                    from {
-                      height: 0%;
-                    }
-                    to {
-                      height: 100%;
-                    }
-                  }
-                `}</style>
-                <div
-                  className="absolute bottom-0 w-full bg-primary/80 rounded-t-sm"
+                  className="absolute bottom-0 w-full bg-primary/80 rounded-t-sm animate-grow"
                   style={{
                     height: "100%",
-                    animation: `grow-${index} 1s ease-out backwards`,
+                    // Use CSS variable for animation delay if needed, or simple standard CSS with inline style
+                    animationFillMode: "backwards",
                     animationDelay: `${index * 0.05}s`,
+                    animationDuration: "1s",
+                    animationTimingFunction: "ease-out",
                   }}
                 ></div>
               </div>
@@ -112,7 +97,7 @@ export function RevenueChart({
           );
         })}
       </div>
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes grow {
           from {
             height: 0%;
@@ -120,6 +105,9 @@ export function RevenueChart({
           to {
             height: 100%;
           }
+        }
+        .animate-grow {
+          animation-name: grow;
         }
       `}</style>
     </div>

@@ -13,6 +13,9 @@ type BookingWithDetails = Database["public"]["Tables"]["bookings"]["Row"] & {
         user_info: Database["public"]["Tables"]["user_info"]["Row"] | null;
       })
     | null;
+  booking_statuses:
+    | Database["public"]["Tables"]["booking_statuses"]["Row"]
+    | null;
 };
 
 // Helper for status styling
@@ -87,11 +90,13 @@ export default function StudentBookingsPage() {
         .select(
           `
           *,
+          *,
           courses (*),
           teacher_info (
             *,
             user_info (name)
-          )
+          ),
+          booking_statuses (*)
         `
         )
         .eq("student_id", studentData.id)
@@ -113,9 +118,12 @@ export default function StudentBookingsPage() {
       `${booking.booking_date}T${booking.start_time}`
     );
     const now = new Date();
+
+    // Determine status
+    const status = booking.booking_statuses?.status_key || "";
     const isHistory =
       bookingDate < now ||
-      ["completed", "cancelled", "rejected"].includes(booking.status);
+      ["completed", "cancelled", "rejected"].includes(status);
 
     if (activeTab === "upcoming" && isHistory) return false;
     if (activeTab === "history" && !isHistory) return false;
@@ -245,12 +253,13 @@ function BookingCard({ booking }: { booking: BookingWithDetails }) {
       ? `${durationMinutes / 60}小時`
       : `${durationMinutes}分鐘`;
 
-  const timeRange = `${booking.start_time.slice(0, 5)} - ${booking.end_time.slice(
+  const timeRange = `${booking.start_time.slice(
     0,
     5
-  )}`;
+  )} - ${booking.end_time.slice(0, 5)}`;
 
-  const themeName = getStatusTheme(booking.status);
+  const status = booking.booking_statuses?.status_key || "pending";
+  const themeName = getStatusTheme(status);
 
   const themeColors = {
     green: {
@@ -356,13 +365,13 @@ function BookingCard({ booking }: { booking: BookingWithDetails }) {
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                 theme.badgeBg
               } ${theme.badgeText} ${
-                booking.status === "pending" ? "animate-pulse" : ""
+                status === "pending" ? "animate-pulse" : ""
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">
                 {theme.icon}
               </span>
-              {getStatusLabel(booking.status)}
+              {getStatusLabel(status)}
             </span>
             <div className="flex items-center gap-2">
               <Link

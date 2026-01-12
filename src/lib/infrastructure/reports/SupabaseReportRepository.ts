@@ -56,7 +56,10 @@ export class SupabaseReportRepository implements ReportRepository {
     if (prevError) throw prevError;
 
     const calc = (bookings: any[]) => {
-      const paidBookings = bookings.filter(b => this.isPaid(b.booking_statuses.status_key));
+      const paidBookings = bookings.filter(b => {
+        const status = Array.isArray(b.booking_statuses) ? b.booking_statuses[0] : b.booking_statuses;
+        return this.isPaid(status?.status_key);
+      });
       const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.price || 0), 0);
       const totalSessions = paidBookings.length;
       const averageOrderValue = totalSessions > 0 ? totalRevenue / totalSessions : 0;
@@ -116,7 +119,8 @@ export class SupabaseReportRepository implements ReportRepository {
     }
 
     data?.forEach(b => {
-      if (!this.isPaid(b.booking_statuses.status_key)) return;
+      const status = Array.isArray(b.booking_statuses) ? b.booking_statuses[0] : b.booking_statuses;
+      if (!this.isPaid(status?.status_key)) return;
       // booking_date is YYYY-MM-DD
       const date = new Date(b.booking_date);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -147,7 +151,8 @@ export class SupabaseReportRepository implements ReportRepository {
     let total = 0;
 
     data?.forEach(b => {
-      if (!this.isPaid(b.booking_statuses.status_key)) return;
+      const status = Array.isArray(b.booking_statuses) ? b.booking_statuses[0] : b.booking_statuses;
+      if (!this.isPaid(status?.status_key)) return;
       const title = (b.course as any)?.title || 'Unknown Course';
       const price = b.price || 0;
       distribution[title] = (distribution[title] || 0) + price;
